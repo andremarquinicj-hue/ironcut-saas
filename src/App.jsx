@@ -377,8 +377,8 @@ function gerarLocal(f){
 
 async function gerarProtocolo(f){
   try {
-    const res = await fetch("https://api.anthropic.com/v1/messages",{
-      method:"POST", headers:{"Content-Type":"application/json","x-api-key":process.env.REACT_APP_ANTHROPIC_KEY||"","anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
+    const res = await fetch("/api/chat",{
+      method:"POST", headers:{"Content-Type":"application/json"},
       body: JSON.stringify({
         model:"claude-sonnet-4-20250514", max_tokens:1000,
         messages:[{role:"user",content:`Protocolo de ${f.objetivo==="massa"?"ganho de massa":"emagrecimento"} para: sexo ${f.sexo}, ${f.idade} anos, ${f.peso}kg, ${f.altura}cm, nível ${f.nivelAtividade}, local ${f.localTreino}. Restrições: ${f.restricoes?.join(",")||"nenhuma"}.
@@ -420,8 +420,8 @@ REGRAS IMPORTANTES:
 3. Seja direta, prática e motivadora.`;
 
   try {
-    const res = await fetch("https://api.anthropic.com/v1/messages",{
-      method:"POST", headers:{"Content-Type":"application/json","x-api-key":process.env.REACT_APP_ANTHROPIC_KEY||"","anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
+    const res = await fetch("/api/chat",{
+      method:"POST", headers:{"Content-Type":"application/json"},
       body: JSON.stringify({
         model:"claude-sonnet-4-20250514", max_tokens:1200,
         messages:[{role:"user",content:ctx+"\n\nMensagem do aluno: "+msg}]
