@@ -378,7 +378,7 @@ function gerarLocal(f){
 async function gerarProtocolo(f){
   try {
     const res = await fetch("https://api.anthropic.com/v1/messages",{
-      method:"POST", headers:{"Content-Type":"application/json"},
+      method:"POST", headers:{"Content-Type":"application/json","x-api-key":process.env.REACT_APP_ANTHROPIC_KEY||"","anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
       body: JSON.stringify({
         model:"claude-sonnet-4-20250514", max_tokens:1000,
         messages:[{role:"user",content:`Protocolo de ${f.objetivo==="massa"?"ganho de massa":"emagrecimento"} para: sexo ${f.sexo}, ${f.idade} anos, ${f.peso}kg, ${f.altura}cm, nível ${f.nivelAtividade}, local ${f.localTreino}. Restrições: ${f.restricoes?.join(",")||"nenhuma"}.
@@ -421,7 +421,7 @@ REGRAS IMPORTANTES:
 
   try {
     const res = await fetch("https://api.anthropic.com/v1/messages",{
-      method:"POST", headers:{"Content-Type":"application/json"},
+      method:"POST", headers:{"Content-Type":"application/json","x-api-key":process.env.REACT_APP_ANTHROPIC_KEY||"","anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
       body: JSON.stringify({
         model:"claude-sonnet-4-20250514", max_tokens:1200,
         messages:[{role:"user",content:ctx+"\n\nMensagem do aluno: "+msg}]
@@ -512,12 +512,6 @@ function aplicarAtualizacaoDieta(protocolo, upd) {
 }
 
 // ─── FIREBASE CONFIG ─────────────────────────────────────────────────────────
-// Firebase SDK via CDN (carregado no index.html)
-// Para usar Firebase, adicione no public/index.html:
-//   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-//   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-//   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-
 const FIREBASE_CONFIG = {
   apiKey: "AIzaSyAUIoV7tDLGwDQy0NVqZq8bYjJJfOAPIJU",
   authDomain: "ironcut-21d.firebaseapp.com",
@@ -527,15 +521,16 @@ const FIREBASE_CONFIG = {
   appId: "1:991217655866:web:32cf3efa7fc4f6f1439503"
 };
 
-// Inicializa Firebase (verifica se já foi inicializado)
+// Inicializa Firebase via window (CDN carregado no index.html)
 let _db = null;
 let _auth = null;
 
 function getFirebase() {
-  if (typeof firebase === "undefined") return null;
-  if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
-  if (!_db)   _db   = firebase.firestore();
-  if (!_auth) _auth = firebase.auth();
+  const fb = window.firebase;
+  if (!fb) return null;
+  if (!fb.apps.length) fb.initializeApp(FIREBASE_CONFIG);
+  if (!_db)   _db   = fb.firestore();
+  if (!_auth) _auth = fb.auth();
   return { db: _db, auth: _auth };
 }
 
