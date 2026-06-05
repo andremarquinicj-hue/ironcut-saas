@@ -1339,10 +1339,22 @@ function Dieta({ protocolo, perfil, onUpdateProtocolo }) {
 
       {protocolo?.kcal&&(
         <div className="macro-grid" style={{marginBottom:18}}>
-          <div className="card macro-card"><div className="macro-val">{protocolo.kcal}</div><div className="macro-label">kcal</div></div>
-          <div className="card macro-card"><div className="macro-val">{protocolo.prot}g</div><div className="macro-label">Proteína</div></div>
-          <div className="card macro-card"><div className="macro-val">{protocolo.carb}g</div><div className="macro-label">Carboidrato</div></div>
-        </div>
+  <div className="card macro-card">
+    <div className="macro-val">{protocolo.kcal}</div>
+    <div style={{fontSize:11,color:C.accent,letterSpacing:1,textTransform:"uppercase",marginTop:2}}>kcal/dia</div>
+    <div className="macro-label">Calorias</div>
+  </div>
+  <div className="card macro-card">
+    <div className="macro-val">{protocolo.prot}<span style={{fontSize:14,color:C.muted}}> g</span></div>
+    <div style={{fontSize:11,color:C.accent,letterSpacing:1,textTransform:"uppercase",marginTop:2}}>por dia</div>
+    <div className="macro-label">Proteína</div>
+  </div>
+  <div className="card macro-card">
+    <div className="macro-val">{protocolo.carb}<span style={{fontSize:14,color:C.muted}}> g</span></div>
+    <div style={{fontSize:11,color:C.accent,letterSpacing:1,textTransform:"uppercase",marginTop:2}}>por dia</div>
+    <div className="macro-label">Carboidrato</div>
+  </div>
+</div>
       )}
 
       {protocolo?.refeicoes&&(
