@@ -479,32 +479,30 @@ REGRAS IMPORTANTES:
 
 // Helper para aplicar atualização de treino ao protocolo
 function aplicarAtualizacaoTreino(protocolo, upd) {
-  if (!upd || !upd.dia || !upd.exercicioAntigo || !upd.exercicioNovo) return protocolo;
-  const novoTreinos = { ...protocolo.treinos };
-  const dia = Object.keys(novoTreinos).find(d => d === upd.dia || novoTreinos[d]?.nome?.toLowerCase().includes(upd.dia?.toLowerCase()));
-  if (!dia) {
-    // tenta encontrar o exercício em qualquer dia
+  if (!upd || !upd.exercicioNovo) return protocolo;
+  const novoTreinos = JSON.parse(JSON.stringify(protocolo.treinos));
+
+  // Se a IA mandou um dia inteiro novo (array de exercícios)
+  if (upd.novosDia && upd.diaAlvo) {
     for (const d of Object.keys(novoTreinos)) {
-      const idx = novoTreinos[d].ex.findIndex(([nome]) =>
-        nome.toLowerCase().includes(upd.exercicioAntigo.toLowerCase()) ||
-        upd.exercicioAntigo.toLowerCase().includes(nome.toLowerCase().split(" ")[0])
-      );
-      if (idx !== -1) {
-        const novoEx = [...novoTreinos[d].ex];
-        novoEx[idx] = [upd.exercicioNovo, upd.series || novoEx[idx][1]];
-        novoTreinos[d] = { ...novoTreinos[d], ex: novoEx };
+      if (d.toLowerCase() === upd.diaAlvo.toLowerCase() ||
+          novoTreinos[d].nome.toLowerCase().includes(upd.diaAlvo.toLowerCase())) {
+        novoTreinos[d] = { nome: upd.novoNome || upd.novosDia, ex: upd.novosExercicios || novoTreinos[d].ex };
         break;
       }
     }
-  } else {
-    const idx = novoTreinos[dia].ex.findIndex(([nome]) =>
-      nome.toLowerCase().includes(upd.exercicioAntigo.toLowerCase()) ||
-      upd.exercicioAntigo.toLowerCase().includes(nome.toLowerCase().split(" ")[0])
-    );
+    return { ...protocolo, treinos: novoTreinos };
+  }
+
+  // Substituição de exercício único — busca em todos os dias
+  for (const d of Object.keys(novoTreinos)) {
+    const idx = novoTreinos[d].ex.findIndex(([nome]) => {
+      const nL = nome.toLowerCase(), aL = (upd.exercicioAntigo||"").toLowerCase();
+      return nL.includes(aL) || aL.includes(nL) || nL.split(" ").some(w => w.length > 3 && aL.includes(w));
+    });
     if (idx !== -1) {
-      const novoEx = [...novoTreinos[dia].ex];
-      novoEx[idx] = [upd.exercicioNovo, upd.series || novoEx[idx][1]];
-      novoTreinos[dia] = { ...novoTreinos[dia], ex: novoEx };
+      novoTreinos[d].ex[idx] = [upd.exercicioNovo, upd.series || novoTreinos[d].ex[idx][1]];
+      break;
     }
   }
   return { ...protocolo, treinos: novoTreinos };
