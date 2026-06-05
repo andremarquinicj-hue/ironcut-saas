@@ -346,22 +346,51 @@ function gerarLocal(f){
     "Dom":{nome:"Descanso Ativo",       ex:[["Caminhada","30min"],["Yoga / Alongamento","20min"],["Auto-Massagem","15min"]]},
   };
 
-  const refFat = [
-    {h:"07:00",n:"Café da Manhã", it:["3 ovos mexidos","40g aveia","1 banana","Café sem açúcar"]},
-    {h:"12:30",n:"Almoço",        it:["200g frango grelhado","150g batata-doce","Salada verde","Fio de azeite"]},
-    {h:"16:00",n:"Lanche",        it:["1 dose whey protein","1 maçã","30g castanhas"]},
-    {h:"20:00",n:"Jantar",        it:["200g salmão ou atum","Legumes no vapor","Salada + azeite"]},
-    {h:"22:00",n:"Ceia (opcional)",it:["150g iogurte grego","1 col. pasta amendoim"]},
-  ];
-  const refMassa = [
-    {h:"07:00",n:"Café da Manhã", it:["5 ovos mexidos","100g aveia + mel","2 bananas","300ml leite integral"]},
-    {h:"10:00",n:"Pré-Treino",   it:["2 fatias pão integral","4 col. pasta amendoim","1 maçã"]},
-    {h:"13:00",n:"Almoço",       it:["250g frango grelhado","200g arroz integral","150g feijão","Salada + azeite"]},
-    {h:"16:00",n:"Lanche",       it:["Whey 40g + leite","50g castanhas","2 bananas"]},
-    {h:"20:00",n:"Jantar",       it:["300g carne bovina ou salmão","200g batata-doce","Legumes refogados"]},
-    {h:"22:00",n:"Ceia",         it:["200g iogurte grego","30g pasta amendoim","1 col. whey"]},
-  ];
+  const prefs = f.alimentosPref || [];
+const temAlimento = (lista) => lista.some(a => prefs.includes(a));
 
+const proteina = prefs.includes("Carne Bovina") ? "200g carne bovina magra grelhada"
+  : prefs.includes("Frango") ? "200g frango grelhado"
+  : prefs.includes("Peixe/Atum") ? "200g salmão ou atum"
+  : prefs.includes("Ovos") ? "4 ovos mexidos"
+  : "200g frango grelhado";
+
+const carbo = prefs.includes("Batata-Doce") ? "150g batata-doce"
+  : prefs.includes("Arroz Integral") ? "100g arroz integral"
+  : prefs.includes("Mandioca") ? "150g mandioca cozida"
+  : prefs.includes("Pão Integral") ? "2 fatias pão integral"
+  : "100g arroz integral";
+
+const fruta = prefs.includes("Banana") ? "1 banana"
+  : prefs.includes("Maçã") ? "1 maçã"
+  : prefs.includes("Frutas Vermelhas") ? "1 xícara frutas vermelhas"
+  : "1 banana";
+
+const gordura = prefs.includes("Pasta Amendoim") ? "30g pasta amendoim"
+  : prefs.includes("Castanhas") ? "30g castanhas"
+  : prefs.includes("Abacate") ? "½ abacate"
+  : "30g castanhas";
+
+const cafe = prefs.includes("Ovos") ? "3 ovos mexidos" : prefs.includes("Omelete") ? "2 ovos omelete" : "3 ovos mexidos";
+const cereal = prefs.includes("Aveia") ? "40g aveia" : prefs.includes("Pão Integral") ? "2 fatias pão integral" : "40g aveia";
+const lanche = prefs.includes("Whey Protein") ? "1 dose whey protein" : prefs.includes("Queijo") ? "2 fatias queijo" : "1 dose whey protein";
+const salada = prefs.includes("Salada Verde") ? "Salada verde" : prefs.includes("Brócolis") ? "Brócolis no vapor" : "Salada verde";
+
+const refFat = [
+  {h:"07:00",n:"Café da Manhã", it:[cafe, cereal, fruta, "Café sem açúcar"]},
+  {h:"12:30",n:"Almoço",        it:[proteina, carbo, salada, "Fio de azeite"]},
+  {h:"16:00",n:"Lanche",        it:[lanche, fruta, gordura]},
+  {h:"20:00",n:"Jantar",        it:[proteina, "Legumes no vapor", "Salada + azeite"]},
+  {h:"22:00",n:"Ceia (opcional)",it:["150g iogurte grego", gordura]},
+];
+const refMassa = [
+  {h:"07:00",n:"Café da Manhã", it:["5 "+cafe.replace("3 ",""), cereal+" + mel", fruta, "300ml leite integral"]},
+  {h:"10:00",n:"Pré-Treino",   it:["2 fatias pão integral", "4 col. "+gordura, fruta]},
+  {h:"13:00",n:"Almoço",       it:["250g "+proteina.replace("200g ",""), carbo, prefs.includes("Feijão")?"150g feijão":"150g lentilha", salada]},
+  {h:"16:00",n:"Lanche",       it:[lanche+" 40g + leite", gordura, fruta]},
+  {h:"20:00",n:"Jantar",       it:["300g "+proteina.replace("200g ",""), carbo, "Legumes refogados"]},
+  {h:"22:00",n:"Ceia",         it:["200g iogurte grego", gordura, "1 col. whey"]},
+];
   const supl = isMassa
     ?["Whey Protein 40g pós-treino","Creatina 5g/dia","Hipercalórico 2x dias de treino","ZMA antes de dormir","Maltodextrina intra-treino"]
     :["Whey Protein 30g pós-treino","Creatina 5g/dia","Ômega 3 — 2 caps com refeição","Vitamina D 2000UI/dia","Cafeína 200mg pré-treino"];
