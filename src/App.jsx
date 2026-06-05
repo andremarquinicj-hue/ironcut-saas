@@ -512,6 +512,7 @@ function aplicarAtualizacaoTreino(protocolo, upd) {
   }
   return { ...protocolo, treinos: novoTreinos };
 }
+
 // Helper para aplicar atualização de dieta ao protocolo
 function aplicarAtualizacaoDieta(protocolo, upd) {
   if (!upd || !upd.refeicaoNome || !upd.alimentoAntigo || !upd.alimentoNovo) return protocolo;
