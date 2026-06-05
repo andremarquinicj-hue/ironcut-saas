@@ -515,19 +515,28 @@ function aplicarAtualizacaoTreino(protocolo, upd) {
 
 // Helper para aplicar atualização de dieta ao protocolo
 function aplicarAtualizacaoDieta(protocolo, upd) {
-  if (!upd || !upd.refeicaoNome || !upd.alimentoAntigo || !upd.alimentoNovo) return protocolo;
+  if (!upd || !upd.refeicaoNome || !upd.alimentoNovo) return protocolo;
+  
   const novasRef = protocolo.refeicoes.map(ref => {
-    if (ref.n.toLowerCase().includes(upd.refeicaoNome.toLowerCase()) ||
-        upd.refeicaoNome.toLowerCase().includes(ref.n.toLowerCase())) {
-      const novosIt = ref.it.map(item =>
-        item.toLowerCase().includes(upd.alimentoAntigo.toLowerCase()) ||
-        upd.alimentoAntigo.toLowerCase().includes(item.toLowerCase().split(" ").slice(0,2).join(" "))
-          ? upd.alimentoNovo : item
-      );
+    const nomeMatch = ref.n.toLowerCase().includes(upd.refeicaoNome.toLowerCase()) ||
+      upd.refeicaoNome.toLowerCase().includes(ref.n.toLowerCase());
+    
+    if (!nomeMatch) return ref;
+
+    // Se tem alimentoAntigo, substitui só ele
+    if (upd.alimentoAntigo) {
+      const novosIt = ref.it.map(item => {
+        const match = item.toLowerCase().includes(upd.alimentoAntigo.toLowerCase()) ||
+          upd.alimentoAntigo.toLowerCase().includes(item.toLowerCase().split(" ").slice(0,2).join(" "));
+        return match ? upd.alimentoNovo : item;
+      });
       return { ...ref, it: novosIt };
     }
-    return ref;
+
+    // Se não tem alimentoAntigo, substitui a refeição inteira
+    return { ...ref, it: [upd.alimentoNovo] };
   });
+
   return { ...protocolo, refeicoes: novasRef };
 }
 
