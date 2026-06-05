@@ -512,21 +512,6 @@ function aplicarAtualizacaoTreino(protocolo, upd) {
   }
   return { ...protocolo, treinos: novoTreinos };
 }
-  // Troca exercício único
-  if (upd.exercicioAntigo && upd.exercicioNovo) {
-    for (const d of Object.keys(novoTreinos)) {
-      const idx = novoTreinos[d].ex.findIndex(([n]) =>
-        n.toLowerCase().includes(upd.exercicioAntigo.toLowerCase()) ||
-        upd.exercicioAntigo.toLowerCase().includes(n.toLowerCase().split(" ")[0])
-      );
-      if (idx !== -1) {
-        novoTreinos[d].ex[idx] = [upd.exercicioNovo, upd.series || novoTreinos[d].ex[idx][1]];
-        break;
-      }
-    }
-  }
-  return { ...protocolo, treinos: novoTreinos };
-}
 // Helper para aplicar atualização de dieta ao protocolo
 function aplicarAtualizacaoDieta(protocolo, upd) {
   if (!upd || !upd.refeicaoNome || !upd.alimentoAntigo || !upd.alimentoNovo) return protocolo;
