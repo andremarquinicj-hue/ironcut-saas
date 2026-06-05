@@ -483,20 +483,50 @@ REGRAS IMPORTANTES:
 
 // Helper para aplicar atualização de treino ao protocolo
 function aplicarAtualizacaoTreino(protocolo, upd) {
-  if (!upd || !upd.exercicioNovo) return protocolo;
+  if (!upd) return protocolo;
   const novoTreinos = JSON.parse(JSON.stringify(protocolo.treinos));
 
-  // Se a IA mandou um dia inteiro novo (array de exercícios)
-  if (upd.novosDia && upd.diaAlvo) {
+  // Troca dia inteiro
+  if (upd.diaAlvo && upd.novosExercicios) {
     for (const d of Object.keys(novoTreinos)) {
-      if (d.toLowerCase() === upd.diaAlvo.toLowerCase() ||
-          novoTreinos[d].nome.toLowerCase().includes(upd.diaAlvo.toLowerCase())) {
-        novoTreinos[d] = { nome: upd.novoNome || upd.novosDia, ex: upd.novosExercicios || novoTreinos[d].ex };
+      if (d === upd.diaAlvo) {
+        novoTreinos[d] = { nome: upd.novoNome || novoTreinos[d].nome, ex: upd.novosExercicios };
         break;
       }
     }
     return { ...protocolo, treinos: novoTreinos };
   }
+
+  // Troca exercício único
+  if (upd.exercicioAntigo && upd.exercicioNovo) {
+    for (const d of Object.keys(novoTreinos)) {
+      const idx = novoTreinos[d].ex.findIndex(([n]) =>
+        n.toLowerCase().includes(upd.exercicioAntigo.toLowerCase()) ||
+        upd.exercicioAntigo.toLowerCase().includes(n.toLowerCase().split(" ")[0])
+      );
+      if (idx !== -1) {
+        novoTreinos[d].ex[idx] = [upd.exercicioNovo, upd.series || novoTreinos[d].ex[idx][1]];
+        break;
+      }
+    }
+  }
+  return { ...protocolo, treinos: novoTreinos };
+}
+  // Troca exercício único
+  if (upd.exercicioAntigo && upd.exercicioNovo) {
+    for (const d of Object.keys(novoTreinos)) {
+      const idx = novoTreinos[d].ex.findIndex(([n]) =>
+        n.toLowerCase().includes(upd.exercicioAntigo.toLowerCase()) ||
+        upd.exercicioAntigo.toLowerCase().includes(n.toLowerCase().split(" ")[0])
+      );
+      if (idx !== -1) {
+        novoTreinos[d].ex[idx] = [upd.exercicioNovo, upd.series || novoTreinos[d].ex[idx][1]];
+        break;
+      }
+    }
+  }
+  return { ...protocolo, treinos: novoTreinos };
+}
 
   // Substituição de exercício único — busca em todos os dias
   for (const d of Object.keys(novoTreinos)) {
