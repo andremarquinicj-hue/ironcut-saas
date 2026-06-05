@@ -527,21 +527,6 @@ function aplicarAtualizacaoTreino(protocolo, upd) {
   }
   return { ...protocolo, treinos: novoTreinos };
 }
-
-  // Substituição de exercício único — busca em todos os dias
-  for (const d of Object.keys(novoTreinos)) {
-    const idx = novoTreinos[d].ex.findIndex(([nome]) => {
-      const nL = nome.toLowerCase(), aL = (upd.exercicioAntigo||"").toLowerCase();
-      return nL.includes(aL) || aL.includes(nL) || nL.split(" ").some(w => w.length > 3 && aL.includes(w));
-    });
-    if (idx !== -1) {
-      novoTreinos[d].ex[idx] = [upd.exercicioNovo, upd.series || novoTreinos[d].ex[idx][1]];
-      break;
-    }
-  }
-  return { ...protocolo, treinos: novoTreinos };
-}
-
 // Helper para aplicar atualização de dieta ao protocolo
 function aplicarAtualizacaoDieta(protocolo, upd) {
   if (!upd || !upd.refeicaoNome || !upd.alimentoAntigo || !upd.alimentoNovo) return protocolo;
