@@ -46,10 +46,10 @@ body { background: ${C.bg}; color: ${C.text}; font-family: 'Barlow', sans-serif;
 .landing { min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:28px; position:relative; overflow:hidden; }
 .land-glow { position:absolute; inset:0; background:radial-gradient(ellipse 65% 55% at 50% 55%, rgba(102,255,240,.07) 0%, transparent 70%); pointer-events:none; animation:glow 4s ease-in-out infinite; }
 .land-grid { position:absolute; inset:0; background-image:linear-gradient(rgba(102,255,240,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(102,255,240,.03) 1px,transparent 1px); background-size:48px 48px; pointer-events:none; }
-.logo-wrap { position:relative; margin-bottom:24px; animation:logoIn .9s cubic-bezier(.34,1.56,.64,1) both; width:320px; height:320px; }
-.logo-img  { width:320px; height:320px; object-fit:contain; animation:glowPulse 2.5s ease-in-out infinite; }
-.logo-ring { position:absolute; inset:-32px; border-radius:50%; border:1px solid rgba(102,255,240,.2); animation:spin 8s linear infinite; }
-.logo-ring2{ position:absolute; inset:-42px; border-radius:50%; border:1px dashed rgba(102,255,240,.1); animation:spin 14s linear infinite reverse; }
+.logo-wrap { position:relative; margin-bottom:24px; animation:logoIn .9s cubic-bezier(.34,1.56,.64,1) both; width:320px; height:320px; display:flex; align-items:center; justify-content:center; }
+.logo-img  { width:200px; height:200px; object-fit:contain; animation:glowPulse 2.5s ease-in-out infinite; }
+.logo-ring { position:absolute; inset:0; border-radius:50%; border:1px solid rgba(102,255,240,.2); animation:spin 8s linear infinite; }
+.logo-ring2{ position:absolute; inset:-20px; border-radius:50%; border:1px dashed rgba(102,255,240,.1); animation:spin 14s linear infinite reverse; }
 .land-brand { font-family:'Bebas Neue',cursive; font-size:36px; letter-spacing:8px; color:${C.text}; margin-bottom:6px; }
 .land-brand span { color:${C.accent}; text-shadow:0 0 20px ${C.accent}; }
 .land-badge { display:inline-flex; align-items:center; gap:6px; padding:6px 18px; border-radius:999px; border:1px solid rgba(102,255,240,.25); background:rgba(102,255,240,.06); font-size:11px; font-weight:700; letter-spacing:2.5px; text-transform:uppercase; color:${C.accent}; margin-bottom:20px; }
