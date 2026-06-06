@@ -1143,23 +1143,28 @@ function Dashboard({ perfil, protocolo, pesosLog, onAddPeso, aguaLog, onToggleAg
         <p style={{fontFamily:"'Barlow Condensed'",fontWeight:700,fontSize:15,textTransform:"uppercase",letterSpacing:1,marginBottom:12}}>Evolução do Peso</p>
         {pesosLog.length>=2?(
           <div className="chart-wrap">
-            <svg width="100%" height="100%" viewBox={`0 0 ${cW} ${cH}`} preserveAspectRatio="none">
-              <defs><linearGradient id="cg" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor={C.accent} stopOpacity=".25"/>
-                <stop offset="100%" stopColor={C.accent} stopOpacity="0"/>
-              </linearGradient></defs>
-              {path&&<>
-                <path d={`${path} L${cW},${cH} L0,${cH} Z`} fill="url(#cg)"/>
-                <path d={path} fill="none" stroke={C.accent} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-                {pesosLog.map((p,i)=>{
-                  const vals=pesosLog.map(x=>x.val);
-                  const mn=Math.min(...vals)-.5,mx=Math.max(...vals)+.5;
-                  const x=(i/(vals.length-1))*cW;
-                  const y=cH-((p.val-mn)/(mx-mn))*cH;
-                  return <circle key={i} cx={x} cy={y} r="5" fill={C.accent} style={{filter:`drop-shadow(0 0 4px ${C.accent})`}}/>;
-                })}
-              </>}
-            </svg>
+         <svg width="100%" height="100%" viewBox={`0 0 ${cW} ${cH+20}`} preserveAspectRatio="none">
+  <defs><linearGradient id="cg" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0%" stopColor={C.accent} stopOpacity=".25"/>
+    <stop offset="100%" stopColor={C.accent} stopOpacity="0"/>
+  </linearGradient></defs>
+  {path&&<>
+    <path d={`${path} L${cW},${cH} L0,${cH} Z`} fill="url(#cg)"/>
+    <path d={path} fill="none" stroke={C.accent} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+    {pesosLog.map((p,i)=>{
+      const vals=pesosLog.map(x=>x.val);
+      const mn=Math.min(...vals)-.5,mx=Math.max(...vals)+.5;
+      const x=(i/(vals.length-1||1))*cW;
+      const y=cH-((p.val-mn)/(mx-mn||1))*cH;
+      return (
+        <g key={i}>
+          <circle cx={x} cy={y} r="5" fill={C.accent} style={{filter:`drop-shadow(0 0 4px ${C.accent})`}}/>
+          <text x={x} y={cH+14} textAnchor="middle" fill={C.muted} fontSize="9" fontFamily="Barlow">{p.data.split("/").slice(0,2).join("/")}</text>
+        </g>
+      );
+    })}
+  </>}
+</svg>
           </div>
         ):(
           <p style={{color:C.muted,fontSize:13,textAlign:"center",padding:"20px 0"}}>Registre seu peso diariamente para ver a evolução aqui.</p>
