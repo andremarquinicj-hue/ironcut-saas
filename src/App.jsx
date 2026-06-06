@@ -930,6 +930,33 @@ function Cadastro({ onCadastro }) {
               </div>
             </div>
           </>
+      <div className="field" style={{marginTop:16}}>
+  <label>Pratica algum esporte físico?</label>
+  <div className="pill-group">
+    {["Sim","Não"].map(s=>(
+      <div key={s} className={`pill${f.praticaEsporte===s?" sel":""}`} onClick={()=>upd("praticaEsporte",s)}>{s}</div>
+    ))}
+  </div>
+</div>
+{f.praticaEsporte==="Sim"&&(
+  <div className="field" style={{marginTop:12}}>
+    <label>Qual esporte?</label>
+    <div className="pill-group">
+      {[
+        {emoji:"⚽",nome:"Futebol"},
+        {emoji:"🏐",nome:"Futevôlei"},
+        {emoji:"🏐",nome:"Vôlei"},
+        {emoji:"🎾",nome:"Beach Tênis"},
+        {emoji:"🏊",nome:"Natação"},
+        {emoji:"🥊",nome:"Luta/MMA"},
+      ].map(e=>(
+        <div key={e.nome} className={`pill${f.esporte===e.nome?" sel":""}`} onClick={()=>upd("esporte",e.nome)}>
+          {e.emoji} {e.nome}
+        </div>
+      ))}
+    </div>
+  </div>
+)}
         )}
 
         {/* ── STEP 5 — SAÚDE ── */}
