@@ -1430,10 +1430,15 @@ function Dieta({ protocolo, perfil, onUpdateProtocolo }) {
 }
 
 // ─── PERFIL ───────────────────────────────────────────────────────────────────
-function Perfil({ perfil, onLogout }) {
+function Perfil({ perfil, onLogout, onRefazerProtocolo }) {
+  const [modal, setModal] = useState(false);
+  const [novoObj, setNovoObj] = useState(perfil.objetivo);
+  const [novaAtiv, setNovaAtiv] = useState(perfil.nivelAtividade);
+  const [novoLocal, setNovoLocal] = useState(perfil.localTreino);
   const isMassa = perfil.objetivo==="massa";
   const ideal = pesoIdeal(perfil.altura, perfil.sexo);
   const imc = calcIMC(perfil.peso, perfil.altura);
+
   const rows = [
     ["Nome",perfil.nome],["E-mail",perfil.email],
     ["Sexo",perfil.sexo.charAt(0).toUpperCase()+perfil.sexo.slice(1)],
@@ -1444,6 +1449,7 @@ function Perfil({ perfil, onLogout }) {
     ["Nível de Atividade",perfil.nivelAtividade],
     ["Local de Treino",perfil.localTreino],
   ];
+
   return (
     <div>
       <div className="sec-label">Meu Perfil</div>
@@ -1461,7 +1467,60 @@ function Perfil({ perfil, onLogout }) {
           <div className="perfil-row"><span className="pr-label">Restrições</span><span className="pr-val">{perfil.restricoes.join(", ")}</span></div>
         )}
       </div>
-      <button className="btn btn-outline" onClick={onLogout}>Sair da Conta</button>
+
+      <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
+        <button className="btn btn-accent" onClick={()=>setModal(true)}>🔄 Refazer Protocolo</button>
+        <button className="btn btn-outline" onClick={onLogout}>Sair da Conta</button>
+      </div>
+
+      {modal&&(
+        <div className="modal">
+          <div className="modal-box">
+            <p className="cad-title">REFAZER <span>PROTOCOLO</span></p>
+            <p className="cad-sub">Atualize seu objetivo e seu plano será regenerado!</p>
+
+            <div className="field">
+              <label>Novo Objetivo</label>
+              <div className="goal-grid">
+                <div className={`goal-card${novoObj==="fat"?" sel-fat":""}`} onClick={()=>setNovoObj("fat")}>
+                  <div className="gi">🔥</div>
+                  <div className="gn">Emagrecer</div>
+                  <div className="gd">Déficit calórico e definição</div>
+                </div>
+                <div className={`goal-card${novoObj==="massa"?" sel-mass":""}`} onClick={()=>setNovoObj("massa")}>
+                  <div className="gi">💪</div>
+                  <div className="gn">Ganhar Massa</div>
+                  <div className="gd">Hipertrofia e superávit</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="field">
+              <label>Nível de Atividade</label>
+              <select value={novaAtiv} onChange={e=>setNovaAtiv(e.target.value)}>
+                {Object.keys(ATIVIDADE).map(k=><option key={k} value={k}>{k}</option>)}
+              </select>
+            </div>
+
+            <div className="field">
+              <label>Local de Treino</label>
+              <div className="pill-group">
+                {["Academia completa","Academia básica","Em casa","Ao ar livre"].map(l=>(
+                  <div key={l} className={`pill${novoLocal===l?" sel":""}`} onClick={()=>setNovoLocal(l)}>{l}</div>
+                ))}
+              </div>
+            </div>
+
+            <div style={{display:"flex",gap:10,marginTop:20}}>
+              <button className="btn btn-accent" style={{flex:1}} onClick={()=>{
+                onRefazerProtocolo({...perfil, objetivo:novoObj, nivelAtividade:novaAtiv, localTreino:novoLocal});
+                setModal(false);
+              }}>🔥 Gerar Novo Protocolo</button>
+              <button className="btn btn-outline" onClick={()=>setModal(false)}>Cancelar</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
