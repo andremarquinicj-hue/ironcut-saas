@@ -1667,7 +1667,15 @@ export default function App() {
             {aba==="dashboard"&&<Dashboard perfil={perfil} protocolo={proto} pesosLog={pesosLog} onAddPeso={addPeso} aguaLog={aguaLog} onToggleAgua={toggleAgua}/>}
             {aba==="treinos" &&proto&&<Treinos  protocolo={proto} perfil={perfil} onUpdateProtocolo={p=>{setProto(p);syncStorage(perfil,p,pesosLog,aguaLog);}}/>}
             {aba==="dieta"   &&proto&&<Dieta    protocolo={proto} perfil={perfil} onUpdateProtocolo={p=>{setProto(p);syncStorage(perfil,p,pesosLog,aguaLog);}}/>}
-            {aba==="perfil"  &&<Perfil perfil={perfil} onLogout={onLogout}/>}
+            {aba==="perfil" &&<Perfil perfil={perfil} onLogout={onLogout} onRefazerProtocolo={async(novoPerfil)=>{
+  setLoading(true);
+  const novoProto = await gerarProtocolo(novoPerfil);
+  setPerfil(novoPerfil);
+  setProto(novoProto);
+  syncStorage(novoPerfil, novoProto, pesosLog, aguaLog);
+  setLoading(false);
+  setAba("dashboard");
+}}/>}
           </div>
 
           {/* MOBILE NAV */}
