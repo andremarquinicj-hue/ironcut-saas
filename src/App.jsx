@@ -1727,6 +1727,9 @@ export default function App() {
   const [aguaLog,  setAguaLog] = useState({});
   const [loading,  setLoading] = useState(false);
   const [showLogin,setLogin]   = useState(false);
+  const [checkLog, setCheckLog] = useState(()=>{
+  try{ return JSON.parse(localStorage.getItem(`ic_check_${perfil?.email}`)||"{}"); }catch{return {};}
+});
 
   // restore session on mount
   useEffect(()=>{
@@ -1774,7 +1777,45 @@ function addPeso(v){
   const nl=[...pesosLog,{val:v,data:dataHoje}];
   setPesos(nl); syncStorage(perfil,proto,nl,aguaLog);
 }
+function toggleCheck(tipo){
+  const d = hoje();
+  const diaAtual = checkLog[d] || {treino:false, dieta:false};
+  const novo = {...checkLog, [d]: {...diaAtual, [tipo]:!diaAtual[tipo]}};
+  setCheckLog(novo);
+  localStorage.setItem(`ic_check_${perfil.email}`, JSON.stringify(novo));
+}
 
+function calcScore(){
+  let total = 0, dias = 0;
+  const ultimos21 = Object.keys(checkLog).slice(-21);
+  for(const d of ultimos21){
+    dias++;
+    const c = checkLog[d]||{};
+    const agua = aguaLog[d]||0;
+    const garrafas = Math.ceil(aguaDia(perfil.peso)/0.5);
+    let pontos = 0;
+    if(c.treino) pontos += 35;
+    if(c.dieta)  pontos += 25;
+    if(agua >= garrafas) pontos += 25;
+    if(pesosLog.some(p=>p.data===d)) pontos += 15;
+    total += pontos;
+  }
+  return dias ? Math.round(total/dias) : 0;
+}
+
+function calcStreak(){
+  let streak = 0;
+  const d = new Date();
+  while(true){
+    const data = `${String(d.getDate()).padStart(2,"0")}/${String(d.getMonth()+1).padStart(2,"0")}/${d.getFullYear()}`;
+    const c = checkLog[data]||{};
+    const agua = aguaLog[data]||0;
+    const garrafas = Math.ceil(aguaDia(perfil.peso)/0.5);
+    if(c.treino && c.dieta && agua>=garrafas){ streak++; d.setDate(d.getDate()-1); }
+    else break;
+  }
+  return streak;
+}
   function toggleAgua(n){
     const d=hoje();
     const cur=aguaLog[d]||0;
