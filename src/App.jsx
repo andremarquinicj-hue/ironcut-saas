@@ -1628,12 +1628,13 @@ export default function App() {
     setLoading(false);setTela("app");
   }
 
-  const navItems=[
-    {id:"dashboard",icon:"⬡",label:"Dashboard"},
-    {id:"treinos",  icon:"🏋",label:"Treinos"},
-    {id:"dieta",    icon:"🥩",label:"Dieta"},
-    {id:"perfil",   icon:"👤",label:"Perfil"},
-  ];
+ const navItems=[
+  {id:"dashboard",icon:"⬡",label:"Dashboard"},
+  {id:"treinos",  icon:"🏋",label:"Treinos"},
+  {id:"dieta",    icon:"🥩",label:"Dieta"},
+  {id:"esporte",  icon:"⚡",label:"Esporte"},
+  {id:"perfil",   icon:"👤",label:"Perfil"},
+];
 
   return (
     <div>
