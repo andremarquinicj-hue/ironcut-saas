@@ -1760,10 +1760,15 @@ export default function App() {
 
   function onLogout(){ clearSession();setPerfil(null);setProto(null);setPesos([]);setAguaLog({});setTela("landing"); }
 
-  function addPeso(v){
-    const nl=[...pesosLog,{val:v,data:hoje()}];
-    setPesos(nl); syncStorage(perfil,proto,nl,aguaLog);
+function addPeso(v){
+  const dataHoje = hoje();
+  if(pesosLog.length && pesosLog[pesosLog.length-1].data === dataHoje){
+    alert("Você já registrou seu peso hoje! Volte amanhã. 💪");
+    return;
   }
+  const nl=[...pesosLog,{val:v,data:dataHoje}];
+  setPesos(nl); syncStorage(perfil,proto,nl,aguaLog);
+}
 
   function toggleAgua(n){
     const d=hoje();
