@@ -1552,6 +1552,157 @@ function Perfil({ perfil, onLogout, onRefazerProtocolo }) {
   );
 }
 
+function Esporte({ perfil }) {
+  const esporte = perfil.esporte || null;
+  const [msgs,setMsgs]=useState([{role:"ai",text:`Olá ${perfil.nome.split(" ")[0]}! Sou seu Professor IA 🏆 Especialista em performance esportiva. Pergunte sobre ${esporte||"qualquer esporte"}, treino, nutrição e recuperação!`}]);
+  const [input,setInput]=useState("");
+  const [load,setLoad]=useState(false);
+
+  const PROTOCOLOS = {
+    "Futebol":{
+      aquecimento:["Corrida leve 5min","Mobilidade quadril","Agachamento dinâmico","Passes leves","Dribles curtos"],
+      treino:["Potência: Agachamento explosivo 4×8","Agilidade: Ladder drill 4×30s","Core: Prancha 4×45s","Sprints curtos 6×20m","Mobilidade 10min"],
+      recuperacao:["Banho frio 10min","Alongamento 20min","Rolo de espuma","Proteína 30g + carboidrato","Hidratação 500ml"],
+      nutricaoDia:["Café reforçado 3h antes","Carboidrato 2h antes","Banana 30min antes","Isotônico durante","Proteína pós-jogo"]
+    },
+    "Futevôlei":{
+      aquecimento:["Mobilidade tornozelo","Saltos verticais","Toque de bola","Manchetes leves","Deslocamento lateral"],
+      treino:["Salto vertical: Box jump 4×10","Potência: Hip thrust 4×15","Estabilidade: Prancha unilateral 3×30s","Velocidade de reação 4×20s","Treino técnico 30min"],
+      recuperacao:["Gelo no tornozelo se necessário","Rolo glúteo e posterior","Proteína 30g","Hidratação reforçada","Sono 8h"],
+      nutricaoDia:["Aveia + banana 2h antes","Fruta 30min antes","Água gelada durante","Whey pós-jogo","Refeição completa 1h depois"]
+    },
+    "Vôlei":{
+      aquecimento:["Rotação ombros","Saltos alternados","Bloqueio simulado","Deslocamento lateral","Toque e manchete"],
+      treino:["Salto: Pliometria 4×12","Ombro: Rotação externa 3×15","Core rotacional 4×12","Velocidade lateral 4×20s","Força explosiva membros superiores"],
+      recuperacao:["Gelo no ombro se necessário","Alongamento membros superiores","Foam roller costas","Proteína + carboidrato","Sono reparador"],
+      nutricaoDia:["Carboidrato complexo 3h antes","Fruta 1h antes","Hidratação constante","Evitar gordura no dia","Whey pós"]
+    },
+    "Beach Tênis":{
+      aquecimento:["Rotação quadril","Mobilidade ombro","Deslocamento lateral","Golpes leves","Sprints 5×10m"],
+      treino:["Resistência: Circuito 4×45s","Potência ombro: Remada 4×12","Agilidade: Cone drill 4×30s","Core anti-rotação 3×15","Técnica de golpe 20min"],
+      recuperacao:["Gelo no cotovelo/ombro","Alongamento membros superiores","Hidratação reforçada","Proteína 30min pós","Descanso ativo no dia seguinte"],
+      nutricaoDia:["Café leve 2h antes","Fruta 30min antes","Água + sal durante","Whey + banana pós","Refeição anti-inflamatória"]
+    },
+    "Natação":{
+      aquecimento:["Rotação ombros 2min","Mobilidade quadril","Alongamento costas","Pernada em seco","Braçada simulada"],
+      treino:["Técnica: Séries curtas 8×50m","Resistência: 4×200m","Força: Puxada com elástico","Core: Prancha 4×45s","Mobilidade ombro 15min"],
+      recuperacao:["Alongamento na piscina","Rolo de espuma costas","Proteína + carboidrato","Vitamina C","Hidratação mesmo na água"],
+      nutricaoDia:["Carboidrato leve 1h antes","Evitar refeição pesada","Gel se treino longo","Whey pós","Refeição completa 30min depois"]
+    },
+    "Luta/MMA":{
+      aquecimento:["Sombra 3min","Mobilidade geral","Agachamento dinâmico","Rotação tronco","Pular corda 3min"],
+      treino:["Condicionamento: HIIT 4×3min","Força: Supino + agachamento","Explosão: Medicine ball 4×10","Core: Rotação com peso 3×15","Técnica específica 30min"],
+      recuperacao:["Banho frio","Proteína imediata","Rolo de espuma","Sono 8-9h","Anti-inflamatório natural"],
+      nutricaoDia:["Carboidrato + proteína 2h antes","Fruta 30min antes","Água durante","Evitar treinar em jejum","Refeição completa pós"]
+    }
+  };
+
+  const proto = esporte ? PROTOCOLOS[esporte] : null;
+
+  async function send(msg){
+    const m=msg||input; if(!m.trim()) return;
+    setMsgs(p=>[...p,{role:"user",text:m}]); setInput(""); setLoad(true);
+    setMsgs(p=>[...p,{role:"ai",text:"typing"}]);
+    try {
+      const res = await fetch("/api/chat",{
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({
+          model:"claude-haiku-4-5-20251001", max_tokens:1000,
+          messages:[{role:"user",content:`Você é um Professor de Educação Física e Coach Esportivo especialista do app IRONCUT. Responda SEMPRE em português, de forma direta e motivadora.
+Perfil: ${perfil.sexo}, ${perfil.idade} anos, ${perfil.peso}kg, objetivo: ${perfil.objetivo==="massa"?"massa":"emagrecimento"}.
+Esporte: ${esporte||"não definido"}.
+Seja especialista em performance, treino funcional, prevenção de lesões, nutrição esportiva e recuperação.
+Pergunta: ${m}`}]
+        })
+      });
+      const d = await res.json();
+      const txt = d?.content?.[0]?.text || "Não consegui processar. Tente novamente.";
+      setMsgs(p=>[...p.filter(x=>x.text!=="typing"),{role:"ai",text:txt}]);
+    } catch {
+      setMsgs(p=>[...p.filter(x=>x.text!=="typing"),{role:"ai",text:"Erro de conexão. Tente novamente!"}]);
+    }
+    setLoad(false);
+  }
+
+  const quickChips = esporte ? [
+    `Como melhorar minha performance no ${esporte}?`,
+    `Aquecimento ideal antes do ${esporte}`,
+    `Como me recuperar após um jogo intenso?`,
+    `O que comer no dia do jogo?`,
+    `Treino complementar para ${esporte}`,
+    `Como prevenir lesões no ${esporte}?`,
+  ] : [
+    "Qual esporte é melhor para emagrecer?",
+    "Como começar no beach tênis?",
+    "Futebol ou futevôlei para condicionamento?",
+    "Treino funcional para esportes",
+  ];
+
+  const emojis={"Futebol":"⚽","Futevôlei":"🏐","Vôlei":"🏐","Beach Tênis":"🎾","Natação":"🏊","Luta/MMA":"🥊"};
+
+  return (
+    <div>
+      <div className="sec-label">Performance Esportiva</div>
+      <p className="sec-title">MÓDULO <span style={{color:C.accent}}>ESPORTE</span></p>
+
+      {!esporte ? (
+        <div className="card-accent" style={{padding:"28px",marginBottom:20,textAlign:"center"}}>
+          <div style={{fontSize:52,marginBottom:12}}>🏆</div>
+          <p style={{fontFamily:"'Bebas Neue'",fontSize:22,letterSpacing:2,marginBottom:8}}>Nenhum esporte cadastrado</p>
+          <p style={{color:C.muted,fontSize:13,lineHeight:1.6}}>Vá em <strong style={{color:C.accent}}>Perfil → Refazer Protocolo</strong> e selecione seu esporte para ver o protocolo personalizado.</p>
+        </div>
+      ) : (
+        <>
+          <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:20,padding:"16px 20px",background:C.card,border:`1px solid rgba(102,255,240,.2)`,borderRadius:12}}>
+            <div style={{fontSize:40}}>{emojis[esporte]||"🏆"}</div>
+            <div>
+              <p style={{fontFamily:"'Bebas Neue'",fontSize:24,letterSpacing:2,color:C.accent}}>{esporte}</p>
+              <p style={{fontSize:12,color:C.muted}}>Protocolo de performance ativo</p>
+            </div>
+          </div>
+
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:20}}>
+            {[
+              {titulo:"🔥 Aquecimento Pré-Jogo",  itens:proto.aquecimento, cor:"rgba(102,255,240,.04)"},
+              {titulo:"💪 Treino Complementar",    itens:proto.treino,      cor:"rgba(167,139,250,.04)"},
+              {titulo:"🧊 Recuperação Pós-Jogo",  itens:proto.recuperacao, cor:"rgba(34,197,94,.04)"},
+              {titulo:"🍽️ Nutrição no Dia do Jogo",itens:proto.nutricaoDia, cor:"rgba(251,191,36,.04)"},
+            ].map(({titulo,itens,cor})=>(
+              <div key={titulo} className="card" style={{padding:"16px 18px",background:cor}}>
+                <p style={{fontFamily:"'Barlow Condensed'",fontWeight:700,fontSize:13,textTransform:"uppercase",letterSpacing:1,marginBottom:10,color:C.lgray}}>{titulo}</p>
+                {itens.map((it,i)=>(
+                  <div key={i} style={{display:"flex",gap:8,fontSize:13,color:C.lgray,padding:"4px 0",borderBottom:`1px solid rgba(255,255,255,.04)`}}>
+                    <span style={{color:C.accent,fontSize:10,marginTop:4,flexShrink:0}}>▸</span>{it}
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+
+      <div className="card ia-section">
+        <div className="ia-header">
+          <div className="ia-dot"/>
+          <p className="ia-title">Professor IA</p>
+          <p className="ia-sub">Especialista em performance esportiva</p>
+        </div>
+        <div className="chat-msgs">
+          {msgs.map((m,i)=>(
+            m.text==="typing"
+              ? <div key={i} className="cmsg ai typing"><span/><span/><span/></div>
+              : <div key={i} className={`cmsg ${m.role}`}>{m.text}</div>
+          ))}
+        </div>
+        <div className="chips">{quickChips.map(c=><div key={c} className="chip" onClick={()=>send(c)}>{c}</div>)}</div>
+        <div className="chat-input-row">
+          <input className="chat-input" placeholder="Pergunte sobre treino, nutrição, recuperação..." value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>e.key==="Enter"&&send()}/>
+          <button className="chat-send" onClick={()=>send()} disabled={load}>Enviar</button>
+        </div>
+      </div>
+    </div>
+  );
+}
 // ─── APP PRINCIPAL ────────────────────────────────────────────────────────────
 const DEMO_PERFIL = {
   nome:"Carlos Mendes",email:"demo@ironcut.app",senha:"demo123",
@@ -1695,6 +1846,7 @@ export default function App() {
             {aba==="dashboard"&&<Dashboard perfil={perfil} protocolo={proto} pesosLog={pesosLog} onAddPeso={addPeso} aguaLog={aguaLog} onToggleAgua={toggleAgua}/>}
             {aba==="treinos" &&proto&&<Treinos  protocolo={proto} perfil={perfil} onUpdateProtocolo={p=>{setProto(p);syncStorage(perfil,p,pesosLog,aguaLog);}}/>}
             {aba==="dieta"   &&proto&&<Dieta    protocolo={proto} perfil={perfil} onUpdateProtocolo={p=>{setProto(p);syncStorage(perfil,p,pesosLog,aguaLog);}}/>}
+            {aba==="esporte" &&<Esporte perfil={perfil}/>}
             {aba==="perfil" &&<Perfil perfil={perfil} onLogout={onLogout} onRefazerProtocolo={async(novoPerfil)=>{
   setLoading(true);
   const novoProto = await gerarProtocolo(novoPerfil);
