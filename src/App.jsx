@@ -1050,7 +1050,7 @@ function Cadastro({ onCadastro }) {
 }
 
 // ─── DASHBOARD ────────────────────────────────────────────────────────────────
-function Dashboard({ perfil, protocolo, pesosLog, onAddPeso, aguaLog, onToggleAgua }) {
+function Dashboard({ perfil, protocolo, pesosLog, onAddPeso, aguaLog, onToggleAgua, checkLog, toggleCheck, calcScore, calcStreak }) {
   const [newP,setNewP]=useState("");
   const motiv = getDayMotiv();
   const pesoAtual = pesosLog.length ? pesosLog[pesosLog.length-1].val : parseFloat(perfil.peso);
@@ -1088,6 +1088,56 @@ function Dashboard({ perfil, protocolo, pesosLog, onAddPeso, aguaLog, onToggleAg
 
   return (
     <div>
+    {/* SCORE */}
+{(()=>{
+  const score = calcScore();
+  const streak = calcStreak();
+  const dHoje = hoje();
+  const checkHoje = checkLog[dHoje]||{treino:false,dieta:false};
+  const nivel = score>=91?"🏆 Elite IRONCUT":score>=71?"⚡ Consistente":score>=41?"📈 Em Progresso":"🌱 Iniciante";
+  const corScore = score>=71?C.accent:score>=41?"#f59e0b":"#666";
+  return (
+    <div className="card" style={{padding:"20px 22px",marginBottom:18,background:"#0F0F0F",border:`1px solid rgba(102,255,240,.2)`}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:16}}>
+        <div>
+          <p style={{fontSize:10,fontWeight:700,letterSpacing:3,textTransform:"uppercase",color:C.muted,marginBottom:4}}>Score IRONCUT</p>
+          <div style={{fontFamily:"'Bebas Neue'",fontSize:52,lineHeight:1,color:corScore,textShadow:`0 0 20px ${corScore}40`}}>{score}</div>
+          <p style={{fontSize:12,color:corScore,fontWeight:700,marginTop:4}}>{nivel}</p>
+        </div>
+        <div style={{textAlign:"right"}}>
+          <p style={{fontSize:10,fontWeight:700,letterSpacing:2,textTransform:"uppercase",color:C.muted,marginBottom:4}}>Sequência</p>
+          <div style={{fontFamily:"'Bebas Neue'",fontSize:36,color:streak>0?"#f59e0b":C.muted,lineHeight:1}}>🔥 {streak}</div>
+          <p style={{fontSize:11,color:C.muted}}>dias seguidos</p>
+        </div>
+      </div>
+      <div style={{height:6,background:"#1a1a1a",borderRadius:3,overflow:"hidden",marginBottom:16}}>
+        <div style={{height:"100%",width:`${score}%`,background:`linear-gradient(90deg,${C.accent2},${corScore})`,borderRadius:3,transition:"width .8s ease"}}/>
+      </div>
+      <p style={{fontSize:11,fontWeight:700,letterSpacing:2,textTransform:"uppercase",color:C.muted,marginBottom:10}}>Check-list de Hoje</p>
+      <div style={{display:"flex",flexDirection:"column",gap:8}}>
+        {[
+          {tipo:"treino", icon:"🏋️", label:"Fui Treinar Hoje", pontos:35},
+          {tipo:"dieta",  icon:"🥩", label:"Segui a Dieta Hoje", pontos:25},
+        ].map(({tipo,icon,label,pontos})=>(
+          <div key={tipo} onClick={()=>toggleCheck(tipo)} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 14px",borderRadius:8,border:`1px solid ${checkHoje[tipo]?C.accent:C.border}`,background:checkHoje[tipo]?"rgba(102,255,240,.06)":"#0D0D0D",cursor:"pointer",transition:"all .2s"}}>
+            <div style={{width:22,height:22,borderRadius:6,border:`2px solid ${checkHoje[tipo]?C.accent:C.border}`,background:checkHoje[tipo]?C.accent:"transparent",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,transition:"all .2s"}}>
+              {checkHoje[tipo]&&<span style={{fontSize:12,color:"#000",fontWeight:900}}>✓</span>}
+            </div>
+            <span style={{fontSize:14,color:checkHoje[tipo]?C.text:C.muted}}>{icon} {label}</span>
+            <span style={{marginLeft:"auto",fontSize:11,fontWeight:700,color:checkHoje[tipo]?C.accent:C.muted}}>+{pontos}pts</span>
+          </div>
+        ))}
+        <div style={{display:"flex",alignItems:"center",gap:12,padding:"12px 14px",borderRadius:8,border:`1px solid ${(aguaLog[dHoje]||0)>=Math.ceil(aguaDia(perfil.peso)/0.5)?C.accent:C.border}`,background:(aguaLog[dHoje]||0)>=Math.ceil(aguaDia(perfil.peso)/0.5)?"rgba(102,255,240,.06)":"#0D0D0D"}}>
+          <div style={{width:22,height:22,borderRadius:6,border:`2px solid ${(aguaLog[dHoje]||0)>=Math.ceil(aguaDia(perfil.peso)/0.5)?C.accent:C.border}`,background:(aguaLog[dHoje]||0)>=Math.ceil(aguaDia(perfil.peso)/0.5)?C.accent:"transparent",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+            {(aguaLog[dHoje]||0)>=Math.ceil(aguaDia(perfil.peso)/0.5)&&<span style={{fontSize:12,color:"#000",fontWeight:900}}>✓</span>}
+          </div>
+          <span style={{fontSize:14,color:(aguaLog[dHoje]||0)>=Math.ceil(aguaDia(perfil.peso)/0.5)?C.text:C.muted}}>💧 Meta de Água Atingida</span>
+          <span style={{marginLeft:"auto",fontSize:11,fontWeight:700,color:(aguaLog[dHoje]||0)>=Math.ceil(aguaDia(perfil.peso)/0.5)?C.accent:C.muted}}>+25pts</span>
+        </div>
+      </div>
+    </div>
+  );
+})()}
       {/* MOTIVACIONAL */}
       <div className="card-accent motiv-card" style={{marginBottom:18}}>
         <div className="motiv-icon">{motiv.icon}</div>
@@ -1896,7 +1946,7 @@ function calcStreak(){
               </div>
             </div>
 
-            {aba==="dashboard"&&<Dashboard perfil={perfil} protocolo={proto} pesosLog={pesosLog} onAddPeso={addPeso} aguaLog={aguaLog} onToggleAgua={toggleAgua}/>}
+          {aba==="dashboard"&&<Dashboard perfil={perfil} protocolo={proto} pesosLog={pesosLog} onAddPeso={addPeso} aguaLog={aguaLog} onToggleAgua={toggleAgua} checkLog={checkLog} toggleCheck={toggleCheck} calcScore={calcScore} calcStreak={calcStreak}/>}
             {aba==="treinos" &&proto&&<Treinos  protocolo={proto} perfil={perfil} onUpdateProtocolo={p=>{setProto(p);syncStorage(perfil,p,pesosLog,aguaLog);}}/>}
             {aba==="dieta"   &&proto&&<Dieta    protocolo={proto} perfil={perfil} onUpdateProtocolo={p=>{setProto(p);syncStorage(perfil,p,pesosLog,aguaLog);}}/>}
             {aba==="esporte" &&<Esporte perfil={perfil}/>}
