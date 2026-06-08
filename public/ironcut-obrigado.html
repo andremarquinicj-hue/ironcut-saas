@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IRONCUT — Bem-vindo ao Sistema</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cyan: #00FFD1;
+    --black: #050F0F;
+    --dark: #080E0E;
+    --border: rgba(0,255,209,0.15);
+  }
+  *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    background: var(--black);
+    color: #fff;
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* BG particles */
+  .bg-glow {
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse at 20% 20%, rgba(0,255,209,0.04) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 80%, rgba(0,255,209,0.03) 0%, transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 60px 24px 80px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* HEADER */
+  .header {
+    text-align: center;
+    margin-bottom: 48px;
+  }
+  .logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    letter-spacing: 5px;
+    color: rgba(255,255,255,0.4);
+    margin-bottom: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+  }
+  .logo span { color: var(--cyan); }
+
+  /* SUCCESS BADGE */
+  .success-badge {
+    width: 80px;
+    height: 80px;
+    background: rgba(0,255,209,0.1);
+    border: 2px solid rgba(0,255,209,0.3);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 28px;
+    animation: pulse 2s ease infinite;
+  }
+  .success-badge svg { color: var(--cyan); }
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(0,255,209,0.2); }
+    50% { box-shadow: 0 0 0 16px rgba(0,255,209,0); }
+  }
+
+  .welcome-tag {
+    font-size: 11px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--cyan);
+    margin-bottom: 16px;
+    display: block;
+  }
+  .welcome-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(40px, 8vw, 64px);
+    line-height: 0.95;
+    letter-spacing: 2px;
+    margin-bottom: 20px;
+  }
+  .welcome-title span { color: var(--cyan); }
+  .welcome-sub {
+    font-size: 16px;
+    font-weight: 300;
+    color: rgba(255,255,255,0.5);
+    line-height: 1.8;
+    max-width: 480px;
+    margin: 0 auto;
+  }
+
+  /* DIVIDER */
+  .divider {
+    width: 48px;
+    height: 2px;
+    background: linear-gradient(to right, transparent, var(--cyan), transparent);
+    margin: 36px auto;
+  }
+
+  /* STEPS */
+  .steps-title {
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.3);
+    text-align: center;
+    margin-bottom: 24px;
+  }
+  .steps {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 40px;
+  }
+  .step {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.07);
+    padding: 20px 24px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    transition: border-color 0.3s ease;
+    position: relative;
+    overflow: hidden;
+  }
+  .step::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 3px; height: 100%;
+    background: var(--cyan);
+    opacity: 0.4;
+  }
+  .step-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 32px;
+    color: rgba(0,255,209,0.2);
+    letter-spacing: 1px;
+    flex-shrink: 0;
+    line-height: 1;
+    width: 36px;
+  }
+  .step-content h3 {
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 4px;
+    color: #fff;
+  }
+  .step-content p {
+    font-size: 13px;
+    font-weight: 300;
+    color: rgba(255,255,255,0.45);
+    line-height: 1.6;
+  }
+  .step-icon {
+    margin-left: auto;
+    font-size: 22px;
+    flex-shrink: 0;
+  }
+
+  /* MAIN CTA */
+  .cta-box {
+    background: rgba(0,255,209,0.04);
+    border: 1px solid var(--border);
+    padding: 36px 32px;
+    text-align: center;
+    margin-bottom: 24px;
+    position: relative;
+    overflow: hidden;
+  }
+  .cta-box::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(to right, transparent, var(--cyan), transparent);
+  }
+  .cta-box h3 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    letter-spacing: 2px;
+    margin-bottom: 8px;
+  }
+  .cta-box p {
+    font-size: 14px;
+    font-weight: 300;
+    color: rgba(255,255,255,0.45);
+    margin-bottom: 24px;
+    line-height: 1.7;
+  }
+  .btn-main {
+    display: inline-block;
+    background: var(--cyan);
+    color: var(--black);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 16px 40px;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    width: 100%;
+  }
+  .btn-main:hover { background: #fff; }
+
+  /* DOWNLOADS */
+  .downloads-section { margin-bottom: 36px; }
+  .downloads-title {
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.3);
+    text-align: center;
+    margin-bottom: 16px;
+  }
+
+  /* PROTOCOLO — destaque principal */
+  .download-main {
+    background: rgba(0,255,209,0.06);
+    border: 1px solid rgba(0,255,209,0.3);
+    padding: 24px;
+    text-decoration: none;
+    color: inherit;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    margin-bottom: 12px;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+  }
+  .download-main::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(to right, transparent, var(--cyan), transparent);
+  }
+  .download-main:hover { background: rgba(0,255,209,0.1); }
+  .download-main .dl-badge {
+    background: var(--cyan);
+    color: var(--black);
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    padding: 3px 8px;
+    text-transform: uppercase;
+    position: absolute;
+    top: 12px; right: 12px;
+  }
+  .download-main .dl-icon { font-size: 32px; flex-shrink: 0; }
+  .download-main .dl-info h4 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 20px;
+    letter-spacing: 1px;
+    color: var(--cyan);
+    margin-bottom: 4px;
+  }
+  .download-main .dl-info p {
+    font-size: 12px;
+    font-weight: 300;
+    color: rgba(255,255,255,0.5);
+    line-height: 1.5;
+  }
+  .download-main .dl-arrow {
+    margin-left: auto;
+    color: var(--cyan);
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+
+  /* BÔNUS grid */
+  .bonus-label {
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.2);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .bonus-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: rgba(255,255,255,0.07);
+  }
+  .bonus-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .download-bonus {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.07);
+    padding: 16px;
+    text-decoration: none;
+    color: inherit;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transition: all 0.3s ease;
+  }
+  .download-bonus:hover {
+    border-color: rgba(0,255,209,0.2);
+    background: rgba(0,255,209,0.02);
+  }
+  .download-bonus .dl-icon { font-size: 22px; flex-shrink: 0; }
+  .download-bonus .dl-info h4 { font-size: 12px; font-weight: 600; margin-bottom: 2px; color: #fff; }
+  .download-bonus .dl-info p { font-size: 11px; font-weight: 300; color: rgba(255,255,255,0.35); }
+  .download-bonus .dl-arrow { margin-left: auto; color: rgba(255,255,255,0.2); font-size: 14px; flex-shrink: 0; }
+
+  /* SECONDARY CARDS */
+  .cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 36px;
+  }
+  .card {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.07);
+    padding: 20px;
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.3s ease;
+    display: block;
+  }
+  .card:hover {
+    border-color: rgba(0,255,209,0.25);
+    background: rgba(0,255,209,0.03);
+  }
+  .card-icon { font-size: 24px; margin-bottom: 10px; }
+  .card h4 { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+  .card p { font-size: 12px; font-weight: 300; color: rgba(255,255,255,0.4); line-height: 1.5; }
+
+  /* MOTIVATIONAL */
+  .quote {
+    text-align: center;
+    padding: 32px 24px;
+    border-top: 1px solid rgba(255,255,255,0.05);
+  }
+  .quote p {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(22px, 4vw, 32px);
+    letter-spacing: 2px;
+    line-height: 1.2;
+    color: rgba(255,255,255,0.5);
+  }
+  .quote p span { color: var(--cyan); }
+  .quote small {
+    display: block;
+    margin-top: 12px;
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.2);
+  }
+
+  /* Countdown */
+  .countdown {
+    background: rgba(0,255,209,0.05);
+    border: 1px solid rgba(0,255,209,0.15);
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+  .countdown-dot {
+    width: 8px; height: 8px;
+    background: var(--cyan);
+    border-radius: 50%;
+    animation: blink 1s ease infinite;
+  }
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.2; }
+  }
+  .countdown p {
+    font-size: 13px;
+    color: rgba(255,255,255,0.6);
+    font-weight: 300;
+  }
+  .countdown p strong { color: var(--cyan); font-weight: 600; }
+
+  @media (max-width: 480px) {
+    .cards { grid-template-columns: 1fr; }
+    .container { padding: 40px 20px 60px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="bg-glow"></div>
+
+<div class="container">
+
+  <!-- Logo -->
+  <div class="logo"><span>11</span> IRONCUT</div>
+
+  <!-- Header -->
+  <div class="header">
+    <div class="success-badge">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="20 6 9 17 4 12"/>
+      </svg>
+    </div>
+    <span class="welcome-tag">Compra confirmada</span>
+    <h1 class="welcome-title">BEM-VINDO AO<br><span>IRONCUT.</span></h1>
+    <p class="welcome-sub">Sua transformação começa agora. Você tomou a decisão mais importante — o resto é protocolo.</p>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- Countdown indicator -->
+  <div class="countdown">
+    <div class="countdown-dot"></div>
+    <p>Seu acesso está <strong>ativo agora</strong> — siga os passos abaixo</p>
+  </div>
+
+  <!-- Steps -->
+  <p class="steps-title">Seus próximos passos</p>
+  <div class="steps">
+    <a href="https://ironcut.app" target="_blank" class="step" style="text-decoration:none;color:inherit;">
+      <div class="step-num">01</div>
+      <div class="step-content">
+        <h3>Acesse o App IRONCUT</h3>
+        <p>Clique aqui, crie sua conta e faça o onboarding completo — leva menos de 3 minutos.</p>
+      </div>
+      <div class="step-icon">📱</div>
+    </a>
+    <div class="step">
+      <div class="step-num">02</div>
+      <div class="step-content">
+        <h3>Faça seu diagnóstico inicial</h3>
+        <p>Preencha seu perfil com objetivo, medidas e nível de treino para a IA criar seu plano personalizado.</p>
+      </div>
+      <div class="step-icon">🎯</div>
+    </div>
+    <a href="https://drive.google.com/uc?export=download&id=1p4vkkEUukYeNFR2CZjuJ7tXWvbXcEdDD" target="_blank" class="step" style="text-decoration:none;color:inherit;">
+      <div class="step-num">03</div>
+      <div class="step-content">
+        <h3>Baixe o Protocolo IRONCUT</h3>
+        <p>Acesse o workshop completo de 21 dias — sua bíblia de transformação corporal baseada em ciência.</p>
+      </div>
+      <div class="step-icon">📖</div>
+    </a>
+    <div class="step">
+      <div class="step-num">04</div>
+      <div class="step-content">
+        <h3>Entre no Grupo VIP</h3>
+        <p>Comunidade exclusiva de membros ativos para motivação, dúvidas e accountability diário.</p>
+      </div>
+      <div class="step-icon">💬</div>
+    </div>
+  </div>
+
+  <!-- Main CTA -->
+  <div class="cta-box">
+    <h3>ACESSAR O APP AGORA</h3>
+    <p>Seu plano personalizado está esperando por você. A IA já está pronta para montar seu protocolo.</p>
+    <a href="https://ironcut.app" class="btn-main">ENTRAR NO IRONCUT →</a>
+  </div>
+
+  <!-- Downloads -->
+  <div class="downloads-section">
+    <p class="downloads-title">Seus materiais — acesso imediato</p>
+
+    <!-- Protocolo principal -->
+    <a href="https://drive.google.com/uc?export=download&id=1p4vkkEUukYeNFR2CZjuJ7tXWvbXcEdDD" target="_blank" class="download-main">
+      <span class="dl-badge">Principal</span>
+      <div class="dl-icon">📋</div>
+      <div class="dl-info">
+        <h4>Protocolo IRONCUT 21 Dias</h4>
+        <p>Seu guia completo de transformação corporal — treino, nutrição e mentalidade baseados em ciência.</p>
+      </div>
+      <div class="dl-arrow">↓</div>
+    </a>
+
+    <!-- Bônus -->
+    <div class="bonus-label">Bônus incluídos</div>
+    <div class="bonus-grid">
+      <a href="https://drive.google.com/uc?export=download&id=1N9k2htSR2Ko1rPWyzegnSfZK2-euA8gH" target="_blank" class="download-bonus">
+        <div class="dl-icon">🥗</div>
+        <div class="dl-info">
+          <h4>Receitas Fitness</h4>
+          <p>PDF de receitas</p>
+        </div>
+        <div class="dl-arrow">↓</div>
+      </a>
+      <a href="https://drive.google.com/uc?export=download&id=1eVaVjFy5qFBNSq7avd5a6yXisRxEJBUl" target="_blank" class="download-bonus">
+        <div class="dl-icon">💊</div>
+        <div class="dl-info">
+          <h4>Guia da Creatina</h4>
+          <p>PDF completo</p>
+        </div>
+        <div class="dl-arrow">↓</div>
+      </a>
+      <a href="https://drive.google.com/uc?export=download&id=1ufDAXLPwdMw1CMf4FnN_6xk4aI6AAlId" target="_blank" class="download-bonus">
+        <div class="dl-icon">⚡</div>
+        <div class="dl-info">
+          <h4>Treino 15 Min</h4>
+          <p>PDF de treinos</p>
+        </div>
+        <div class="dl-arrow">↓</div>
+      </a>
+      <a href="https://drive.google.com/uc?export=download&id=1xN_0nvZrkuCBdjSeWVsko5W2jfOLVkzg" target="_blank" class="download-bonus">
+        <div class="dl-icon">🧠</div>
+        <div class="dl-info">
+          <h4>Mentalidade Blindada</h4>
+          <p>PDF mentalidade</p>
+        </div>
+        <div class="dl-arrow">↓</div>
+      </a>
+    </div>
+  </div>
+
+  <!-- Secondary cards -->
+  <div class="cards">
+    <a href="#" class="card" style="opacity:0.5;pointer-events:none;position:relative;">
+      <div class="card-icon">💬</div>
+      <h4>Grupo VIP</h4>
+      <p>Comunidade exclusiva de membros</p>
+      <span style="position:absolute;top:10px;right:10px;font-size:9px;letter-spacing:2px;background:rgba(0,255,209,0.15);color:#00FFD1;padding:2px 7px;text-transform:uppercase;">Em breve</span>
+    </a>
+    <a href="https://instagram.com/ironcut21d" target="_blank" class="card">
+      <div class="card-icon">📸</div>
+      <h4>Instagram</h4>
+      <p>@ironcut21d — dicas e resultados</p>
+    </a>
+    <a href="mailto:ironcut21D@outlook.com" class="card" style="grid-column:1/-1;">
+      <div class="card-icon">📧</div>
+      <h4>Suporte</h4>
+      <p>ironcut21D@outlook.com</p>
+    </a>
+  </div>
+
+  <!-- Quote -->
+  <div class="quote">
+    <p>"A DISCIPLINA DE HOJE<br>É O <span>ORGULHO</span> DE AMANHÃ."</p>
+    <small>IRONCUT Protocol</small>
+  </div>
+
+</div>
+
+</body>
+</html>
