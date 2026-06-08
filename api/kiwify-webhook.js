@@ -1,32 +1,15 @@
 // api/kiwify-webhook.js
-// Recebe o webhook da Kiwify após cada compra aprovada
-// e salva o email do comprador na coleção "compradores" do Firebase
-
 const https = require("https");
 
-// Firebase REST API — sem SDK necessário
 const FIREBASE_URL = "https://ironcut-21d-default-rtdb.firebaseio.com";
-const FIREBASE_KEY = process.env.FIREBASE_SECRET; // Service Account ou DB Secret
 
-async function salvarComprador(email, dados) {
-  // Sanitiza o email para usar como chave no Firebase (sem pontos e @)
-  const chave = email.replace(/\./g, "_").replace(/@/g, "__at__");
-
+async function firebasePut(path, data) {
   return new Promise((resolve, reject) => {
-    const body = JSON.stringify({
-      email,
-      dataCompra: new Date().toISOString(),
-      status: "ativo",
-      produto: dados.product_name || "IRONCUT 21D",
-      pedido: dados.order_id || "",
-    });
-
-    const url = new URL(`${FIREBASE_URL}/compradores/${chave}.json${FIREBASE_KEY ? `?auth=${FIREBASE_KEY}` : ""}`);
-
+    const body = JSON.stringify(data);
     const req = https.request(
       {
-        hostname: url.hostname,
-        path: url.pathname + url.search,
+        hostname: "ironcut-21d-default-rtdb.firebaseio.com",
+        path: path + ".json",
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -34,12 +17,11 @@ async function salvarComprador(email, dados) {
         },
       },
       (res) => {
-        let data = "";
-        res.on("data", (chunk) => (data += chunk));
-        res.on("end", () => resolve(data));
+        let d = "";
+        res.on("data", (c) => (d += c));
+        res.on("end", () => resolve(d));
       }
     );
-
     req.on("error", reject);
     req.write(body);
     req.end();
@@ -47,7 +29,6 @@ async function salvarComprador(email, dados) {
 }
 
 export default async function handler(req, res) {
-  // Só aceita POST
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
@@ -55,43 +36,69 @@ export default async function handler(req, res) {
   try {
     const payload = req.body;
 
-    // Kiwify envia status "paid" para compras aprovadas
-    // e "refunded" para reembolsos
-    const status = payload?.status || payload?.payment_status;
+    // Loga o payload completo no Firebase para debug
+    await firebasePut("/logs/ultimo_webhook", {
+      timestamp: new Date().toISOString(),
+      payload: payload,
+    });
+
+    // Kiwify envia o email em diferentes lugares dependendo da versão
     const email =
       payload?.Customer?.email ||
       payload?.customer?.email ||
-      payload?.email;
+      payload?.buyer?.email ||
+      payload?.data?.customer?.email ||
+      payload?.data?.buyer?.email ||
+      payload?.email ||
+      null;
+
+    // Status pode vir em vários formatos
+    const status =
+      payload?.status ||
+      payload?.payment_status ||
+      payload?.order_status ||
+      payload?.data?.status ||
+      null;
+
+    // Loga email e status encontrados
+    await firebasePut("/logs/ultimo_processado", {
+      timestamp: new Date().toISOString(),
+      email_encontrado: email,
+      status_encontrado: status,
+      chaves_payload: Object.keys(payload || {}),
+    });
 
     if (!email) {
-      return res.status(400).json({ error: "Email não encontrado no payload" });
+      return res.status(200).json({ ok: false, message: "Email não encontrado", chaves: Object.keys(payload || {}) });
     }
 
-    if (status === "paid" || status === "approved" || status === "complete") {
-      // Compra aprovada — libera acesso
-      await salvarComprador(email, payload);
-      console.log(`✅ Comprador liberado: ${email}`);
+    const chave = email.replace(/\./g, "_").replace(/@/g, "__at__");
+
+    if (["paid", "approved", "complete", "waiting_payment"].includes(status?.toLowerCase())) {
+      await firebasePut(`/compradores/${chave}`, {
+        email,
+        dataCompra: new Date().toISOString(),
+        status: "ativo",
+        produto: payload?.Product?.name || payload?.product?.name || payload?.data?.product?.name || "IRONCUT 21D",
+        pedido: payload?.order_id || payload?.id || "",
+      });
       return res.status(200).json({ ok: true, message: "Acesso liberado", email });
     }
 
-    if (status === "refunded" || status === "chargeback") {
-      // Reembolso — bloqueia acesso
-      const chave = email.replace(/\./g, "_").replace(/@/g, "__at__");
-      const fbUrl = `${FIREBASE_URL}/compradores/${chave}.json${FIREBASE_KEY ? `?auth=${FIREBASE_KEY}` : ""}`;
-      // Atualiza status para inativo
-      await fetch(fbUrl, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: "inativo", motivoBloqueio: status }),
+    if (["refunded", "chargeback", "cancelled"].includes(status?.toLowerCase())) {
+      await firebasePut(`/compradores/${chave}`, {
+        email,
+        status: "inativo",
+        motivoBloqueio: status,
+        dataAtualizacao: new Date().toISOString(),
       });
-      console.log(`🚫 Acesso bloqueado (reembolso): ${email}`);
-      return res.status(200).json({ ok: true, message: "Acesso bloqueado" });
+      return res.status(200).json({ ok: true, message: "Acesso bloqueado", email });
     }
 
-    // Outro status — ignora
-    return res.status(200).json({ ok: true, message: "Status ignorado: " + status });
+    return res.status(200).json({ ok: true, message: "Status não processado: " + status });
+
   } catch (err) {
     console.error("Webhook error:", err);
-    return res.status(500).json({ error: "Erro interno", details: err.message });
+    return res.status(500).json({ error: err.message });
   }
 }
