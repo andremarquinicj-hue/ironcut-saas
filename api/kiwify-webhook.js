@@ -1,8 +1,7 @@
 // api/kiwify-webhook.js
 const https = require("https");
 
-const RESEND_API_KEY = "re_gPGdr4wP_77F4dD1bLZghPLqFZxsUq7Jz";
-
+const RESEND_API_KEY = "re_SiVnNfkk_3YQXkrAeLMnByaMZhTFX6nuU";
 async function firebasePut(path, data) {
   return new Promise((resolve, reject) => {
     const body = JSON.stringify(data);
