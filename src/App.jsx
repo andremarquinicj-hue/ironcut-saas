@@ -675,14 +675,14 @@ function Cadastro({ onCadastro }) {
 }
 
 // ─── DASHBOARD ────────────────────────────────────────────────────────────────
-function Dashboard({ perfil, protocolo, pesosLog, onAddPeso, aguaLog, onToggleAgua, checkLog, toggleCheck, calcScore, calcStreak }) {
+function Dashboard({ perfil, protocolo, pesosLog, onAddPeso, aguaLog, onToggleAgua, checkLog, toggleCheck, calcScore, calcStreak, pesoIdealReal }) {
   const [newP,setNewP]=useState("");
   const CAL_KEY=`ic_cal_${perfil.email}_${hoje()}`;
   const [calTreino,setCalTreino]=useState(()=>{try{return parseInt(localStorage.getItem(`ic_cal_${perfil.email}_${hoje()}`)||"0");}catch{return 0;}});
   function salvarCalTreino(v){const n=parseInt(v)||0;setCalTreino(n);localStorage.setItem(`ic_cal_${perfil.email}_${hoje()}`,String(n));}
   const motiv=getDayMotiv();
   const pesoAtual=pesosLog.length?pesosLog[pesosLog.length-1].val:parseFloat(perfil.peso);
-  const ideal=parseFloat(pesoIdeal(perfil.altura,perfil.sexo));
+  const ideal=pesoIdealReal||parseFloat(pesoIdeal(perfil.altura,perfil.sexo));
   const perdido=(parseFloat(perfil.peso)-pesoAtual).toFixed(1);
   const falta=Math.abs(pesoAtual-ideal).toFixed(1);
   const imc=calcIMC(String(pesoAtual),perfil.altura);
@@ -1363,6 +1363,248 @@ function Esporte({ perfil }) {
   );
 }
 
+// ─── UTILS COMPOSIÇÃO CORPORAL ────────────────────────────────────────────────
+function calcGorduraUSNavy(sexo, altura, cintura, pescoco, quadril) {
+  const h = parseFloat(altura);
+  const c = parseFloat(cintura);
+  const p = parseFloat(pescoco);
+  const q = parseFloat(quadril);
+  if (!h || !c || !p) return null;
+  if (sexo === "masculino") {
+    if (c <= p) return null;
+    const g = 86.010 * Math.log10(c - p) - 70.041 * Math.log10(h) + 36.76;
+    return Math.max(3, Math.min(60, parseFloat(g.toFixed(1))));
+  } else {
+    if (!q || c + q <= p) return null;
+    const g = 163.205 * Math.log10(c + q - p) - 97.684 * Math.log10(h) - 78.387;
+    return Math.max(10, Math.min(70, parseFloat(g.toFixed(1))));
+  }
+}
+
+function classGordura(pct, sexo) {
+  if (sexo === "masculino") {
+    if (pct < 6)  return { cls: "Essencial",   cor: "#60a5fa", emoji: "💙" };
+    if (pct < 14) return { cls: "Atlético",    cor: "#22c55e", emoji: "🏆" };
+    if (pct < 18) return { cls: "Fitness",     cor: "#66FFF0", emoji: "💪" };
+    if (pct < 25) return { cls: "Aceitável",   cor: "#f59e0b", emoji: "⚠️" };
+    return        { cls: "Obesidade",          cor: "#ff6b6b", emoji: "❌" };
+  } else {
+    if (pct < 14) return { cls: "Essencial",   cor: "#60a5fa", emoji: "💙" };
+    if (pct < 21) return { cls: "Atlético",    cor: "#22c55e", emoji: "🏆" };
+    if (pct < 25) return { cls: "Fitness",     cor: "#66FFF0", emoji: "💪" };
+    if (pct < 32) return { cls: "Aceitável",   cor: "#f59e0b", emoji: "⚠️" };
+    return        { cls: "Obesidade",          cor: "#ff6b6b", emoji: "❌" };
+  }
+}
+
+function pesoIdealPorGordura(pesoAtual, pctGordura, objetivo, sexo) {
+  const alvo = objetivo === "massa"
+    ? (sexo === "masculino" ? 12 : 18)
+    : (sexo === "masculino" ? 15 : 22);
+  const massaMagra = pesoAtual * (1 - pctGordura / 100);
+  const ideal = massaMagra / (1 - alvo / 100);
+  return { ideal: parseFloat(ideal.toFixed(1)), alvo, massaMagra: parseFloat(massaMagra.toFixed(1)) };
+}
+
+// ─── ABA MEDIDAS ──────────────────────────────────────────────────────────────
+function Medidas({ perfil, pesosLog, onPesoIdealAtualizado }) {
+  const MED_KEY = `ic_medidas_${perfil.email}`;
+  const [historico, setHistorico] = useState(() => {
+    try { return JSON.parse(localStorage.getItem(MED_KEY) || "[]"); } catch { return []; }
+  });
+  const [form, setForm] = useState({ pescoco: "", cintura: "", quadril: "", braco: "", coxa: "" });
+  const upd = (k, v) => setForm(p => ({ ...p, [k]: v }));
+
+  const pesoAtual = pesosLog.length ? pesosLog[pesosLog.length - 1].val : parseFloat(perfil.peso);
+  const isFem = perfil.sexo === "feminino";
+
+  const pctAtual = historico.length > 0
+    ? calcGorduraUSNavy(perfil.sexo, perfil.altura, historico[historico.length-1].cintura, historico[historico.length-1].pescoco, historico[historico.length-1].quadril)
+    : null;
+
+  const formPct = calcGorduraUSNavy(perfil.sexo, perfil.altura, form.cintura, form.pescoco, form.quadril);
+  const classAtual = pctAtual ? classGordura(pctAtual, perfil.sexo) : null;
+  const idealInfo = pctAtual ? pesoIdealPorGordura(pesoAtual, pctAtual, perfil.objetivo, perfil.sexo) : null;
+
+  function salvar() {
+    if (!form.pescoco || !form.cintura || (isFem && !form.quadril)) {
+      alert("Preencha pelo menos Pescoço, Cintura" + (isFem ? " e Quadril" : "") + " para calcular o % de gordura.");
+      return;
+    }
+    const novo = { data: hoje(), ...form, pct: formPct };
+    const novoHist = [...historico, novo];
+    setHistorico(novoHist);
+    localStorage.setItem(MED_KEY, JSON.stringify(novoHist));
+    setForm({ pescoco: "", cintura: "", quadril: "", braco: "", coxa: "" });
+    // Atualiza peso ideal no dashboard se tiver gordura calculada
+    if (formPct && onPesoIdealAtualizado) {
+      const info = pesoIdealPorGordura(pesoAtual, formPct, perfil.objetivo, perfil.sexo);
+      onPesoIdealAtualizado(info.ideal);
+    }
+  }
+
+  const ultimo = historico.length > 0 ? historico[historico.length - 1] : null;
+  const penultimo = historico.length > 1 ? historico[historico.length - 2] : null;
+
+  function diff(campo) {
+    if (!ultimo || !penultimo || !ultimo[campo] || !penultimo[campo]) return null;
+    return (parseFloat(ultimo[campo]) - parseFloat(penultimo[campo])).toFixed(1);
+  }
+
+  const campos = [
+    { key: "pescoco", label: "Pescoço", emoji: "📏", obrig: true },
+    { key: "cintura", label: "Cintura", emoji: "📐", obrig: true },
+    { key: "quadril", label: "Quadril", emoji: "🍑", obrig: isFem },
+    { key: "braco",   label: "Braço",   emoji: "💪", obrig: false },
+    { key: "coxa",    label: "Coxa",    emoji: "🦵", obrig: false },
+  ];
+
+  return (
+    <div>
+      <div className="sec-label">Composição Corporal</div>
+      <p className="sec-title">📏 MEDIDAS <span style={{color:C.accent}}>& GORDURA</span></p>
+
+      {/* RESULTADO ATUAL */}
+      {pctAtual && classAtual && (
+        <div className="card-accent" style={{padding:"20px 22px",marginBottom:18}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:16}}>
+            <div>
+              <p style={{fontSize:10,fontWeight:700,letterSpacing:3,textTransform:"uppercase",color:C.muted,marginBottom:4}}>% Gordura Corporal</p>
+              <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:56,lineHeight:1,color:classAtual.cor,textShadow:`0 0 20px ${classAtual.cor}40`}}>{pctAtual}%</div>
+              <p style={{fontSize:14,fontWeight:700,color:classAtual.cor,marginTop:4}}>{classAtual.emoji} {classAtual.cls}</p>
+            </div>
+            {idealInfo && (
+              <div style={{textAlign:"right",background:"rgba(102,255,240,.06)",border:"1px solid rgba(102,255,240,.15)",borderRadius:10,padding:"14px 18px"}}>
+                <p style={{fontSize:10,fontWeight:700,letterSpacing:2,textTransform:"uppercase",color:C.muted,marginBottom:4}}>Peso Ideal Real</p>
+                <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:32,color:C.accent,lineHeight:1}}>{idealInfo.ideal}kg</div>
+                <p style={{fontSize:11,color:C.muted,marginTop:4}}>Alvo: {idealInfo.alvo}% gordura</p>
+                <p style={{fontSize:11,color:C.muted}}>Massa magra: {idealInfo.massaMagra}kg</p>
+              </div>
+            )}
+          </div>
+
+          {/* Barra de gordura */}
+          {(()=>{
+            const max = isFem ? 50 : 40;
+            const pct = Math.min(100, (pctAtual / max) * 100);
+            const zonas = isFem
+              ? [{w:28,label:"Atlético",cor:"#22c55e"},{w:8,label:"Fitness",cor:"#66FFF0"},{w:14,label:"Aceitável",cor:"#f59e0b"},{w:50,label:"Obesidade",cor:"#ff6b6b"}]
+              : [{w:35,label:"Atlético",cor:"#22c55e"},{w:10,label:"Fitness",cor:"#66FFF0"},{w:17.5,label:"Aceitável",cor:"#f59e0b"},{w:37.5,label:"Obesidade",cor:"#ff6b6b"}];
+            return (
+              <div>
+                <p style={{fontSize:10,fontWeight:700,letterSpacing:2,textTransform:"uppercase",color:C.muted,marginBottom:6}}>Faixa de classificação</p>
+                <div style={{position:"relative",height:12,borderRadius:6,overflow:"hidden",display:"flex",marginBottom:6}}>
+                  {zonas.map((z,i)=><div key={i} style={{width:`${z.w}%`,background:z.cor,opacity:.6}}/>)}
+                  <div style={{position:"absolute",left:`${Math.min(97,pct)}%`,top:-2,width:4,height:16,background:"#fff",borderRadius:2,boxShadow:"0 0 6px rgba(255,255,255,.8)"}}/>
+                </div>
+                <div style={{display:"flex",gap:12,flexWrap:"wrap"}}>
+                  {zonas.map((z,i)=>(
+                    <div key={i} style={{display:"flex",alignItems:"center",gap:4,fontSize:10,color:C.muted}}>
+                      <div style={{width:8,height:8,borderRadius:"50%",background:z.cor}}/>
+                      {z.label}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
+        </div>
+      )}
+
+      {/* ÚLTIMAS MEDIDAS */}
+      {ultimo && (
+        <div className="card" style={{padding:"18px 20px",marginBottom:18}}>
+          <p style={{fontFamily:"'Barlow Condensed'",fontWeight:700,fontSize:15,textTransform:"uppercase",letterSpacing:1,marginBottom:12}}>Últimas Medidas — {ultimo.data}</p>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(120px,1fr))",gap:10}}>
+            {campos.filter(c=>ultimo[c.key]).map(({key,label,emoji})=>{
+              const d = diff(key);
+              const melhorou = d && (key==="cintura"||key==="quadril"||key==="coxa") ? parseFloat(d)<0 : parseFloat(d)>0;
+              return (
+                <div key={key} style={{background:"#0D0D0D",border:"1px solid #1a1a1a",borderRadius:8,padding:"12px",textAlign:"center"}}>
+                  <div style={{fontSize:16,marginBottom:4}}>{emoji}</div>
+                  <div style={{fontSize:9,fontWeight:700,letterSpacing:1,textTransform:"uppercase",color:C.muted,marginBottom:2}}>{label}</div>
+                  <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:22,color:C.accent,lineHeight:1}}>{ultimo[key]}cm</div>
+                  {d && <div style={{fontSize:10,color:melhorou?"#22c55e":"#ff6b6b",marginTop:2,fontWeight:700}}>{parseFloat(d)>0?"+":""}{d}cm</div>}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* FORMULÁRIO NOVO REGISTRO */}
+      <div className="card" style={{padding:"20px 22px",marginBottom:18}}>
+        <p style={{fontFamily:"'Barlow Condensed'",fontWeight:700,fontSize:15,textTransform:"uppercase",letterSpacing:1,marginBottom:4}}>Registrar Novas Medidas</p>
+        <p style={{fontSize:11,color:C.muted,marginBottom:16,lineHeight:1.5}}>Use uma fita métrica. Pescoço + Cintura{isFem?" + Quadril":""} são obrigatórios para calcular o % de gordura pela <strong style={{color:C.lgray}}>Fórmula US Navy</strong>.</p>
+
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:12}}>
+          {campos.map(({key,label,emoji,obrig})=>(
+            <div key={key} className="field" style={{margin:0}}>
+              <label>{emoji} {label} (cm){obrig&&<span style={{color:C.accent}}> *</span>}</label>
+              <input type="number" placeholder={`Ex: ${key==="pescoco"?38:key==="cintura"?85:key==="quadril"?100:key==="braco"?35:55}`} value={form[key]} onChange={e=>upd(key,e.target.value)} step="0.1"/>
+            </div>
+          ))}
+        </div>
+
+        {/* Preview do % calculado */}
+        {formPct && (()=>{
+          const cls = classGordura(formPct, perfil.sexo);
+          const inf = pesoIdealPorGordura(pesoAtual, formPct, perfil.objetivo, perfil.sexo);
+          return (
+            <div style={{background:`${cls.cor}10`,border:`1px solid ${cls.cor}40`,borderRadius:8,padding:"12px 16px",marginBottom:12}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                <div>
+                  <span style={{fontSize:12,fontWeight:700,color:cls.cor}}>{cls.emoji} {cls.cls}</span>
+                  <span style={{fontSize:11,color:C.muted,marginLeft:8}}>% Gordura estimado</span>
+                </div>
+                <span style={{fontFamily:"'Bebas Neue',cursive",fontSize:28,color:cls.cor}}>{formPct}%</span>
+              </div>
+              <div style={{fontSize:11,color:C.muted,marginTop:6}}>
+                Peso ideal com {inf.alvo}% de gordura: <strong style={{color:C.accent}}>{inf.ideal}kg</strong> — Massa magra atual: <strong style={{color:C.lgray}}>{inf.massaMagra}kg</strong>
+              </div>
+            </div>
+          );
+        })()}
+
+        <button className="btn btn-accent" style={{width:"100%"}} onClick={salvar}>
+          💾 Salvar Medidas
+        </button>
+      </div>
+
+      {/* HISTÓRICO */}
+      {historico.length > 1 && (
+        <div className="card" style={{padding:"18px 20px",marginBottom:18}}>
+          <p style={{fontFamily:"'Barlow Condensed'",fontWeight:700,fontSize:15,textTransform:"uppercase",letterSpacing:1,marginBottom:12}}>Histórico de Registros</p>
+          <div style={{display:"flex",flexDirection:"column",gap:8}}>
+            {[...historico].reverse().slice(0,6).map((reg,i)=>{
+              const cls = reg.pct ? classGordura(reg.pct, perfil.sexo) : null;
+              return (
+                <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 14px",background:"#0D0D0D",border:"1px solid #1a1a1a",borderRadius:8}}>
+                  <span style={{fontSize:12,color:C.muted,fontWeight:700}}>{reg.data}</span>
+                  <div style={{display:"flex",gap:12,alignItems:"center",fontSize:12,flexWrap:"wrap"}}>
+                    {reg.cintura && <span style={{color:C.lgray}}>Cin: <strong style={{color:C.text}}>{reg.cintura}cm</strong></span>}
+                    {reg.braco && <span style={{color:C.lgray}}>Br: <strong style={{color:C.text}}>{reg.braco}cm</strong></span>}
+                    {reg.pct && cls && <span style={{color:cls.cor,fontWeight:700}}>{reg.pct}% {cls.emoji}</span>}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {!historico.length && (
+        <div className="card" style={{padding:"28px",textAlign:"center"}}>
+          <div style={{fontSize:48,marginBottom:12}}>📏</div>
+          <p style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,letterSpacing:2,marginBottom:8}}>Nenhuma medida registrada</p>
+          <p style={{color:C.muted,fontSize:13,lineHeight:1.6}}>Registre suas medidas acima para calcular seu % de gordura corporal e descobrir seu peso ideal real!</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+
 // ─── DEMO PERFIL ─────────────────────────────────────────────────────────────
 const DEMO_PERFIL={nome:"Carlos Mendes",email:"demo@ironcut.app",senha:"demo123",objetivo:"fat",sexo:"masculino",idade:"34",peso:"92",altura:"178",nivelAtividade:"Moderadamente ativo (3-4x/semana)",localTreino:"Academia completa",restricoes:[],condicoes:["Nenhuma"]};
 
@@ -1379,6 +1621,7 @@ export default function App() {
   // ✅ NOVO: estado de bloqueio
   const [bloqueado, setBloqueado] = useState(false);
   const [checkLog, setCheckLog] = useState({});
+  const [pesoIdealReal, setPesoIdealReal] = useState(null);
 
   // Restore session on mount
   useEffect(()=>{
@@ -1507,6 +1750,7 @@ export default function App() {
     {id:"dashboard",icon:"⬡",label:"Dashboard"},
     {id:"treinos",  icon:"🏋",label:"Treinos"},
     {id:"dieta",    icon:"🥩",label:"Dieta"},
+    {id:"medidas",  icon:"📏",label:"Medidas"},
     {id:"esporte",  icon:"⚡",label:"Esporte"},
     {id:"perfil",   icon:"👤",label:"Perfil"},
   ];
@@ -1557,9 +1801,10 @@ export default function App() {
               <div style={{fontSize:11,color:C.muted,fontFamily:"'Barlow Condensed'",fontWeight:700,letterSpacing:2}}>{navItems.find(n=>n.id===aba)?.label.toUpperCase()}</div>
             </div>
 
-            {aba==="dashboard"&&<Dashboard perfil={perfil} protocolo={proto} pesosLog={pesosLog} onAddPeso={addPeso} aguaLog={aguaLog} onToggleAgua={toggleAgua} checkLog={checkLog} toggleCheck={toggleCheck} calcScore={calcScore} calcStreak={calcStreak}/>}
+            {aba==="dashboard"&&<Dashboard perfil={perfil} protocolo={proto} pesosLog={pesosLog} onAddPeso={addPeso} aguaLog={aguaLog} onToggleAgua={toggleAgua} checkLog={checkLog} toggleCheck={toggleCheck} calcScore={calcScore} calcStreak={calcStreak} pesoIdealReal={pesoIdealReal}/>}
             {aba==="treinos"&&proto&&<Treinos protocolo={proto} perfil={perfil} onUpdateProtocolo={p=>{setProto(p);syncStorage(perfil,p,pesosLog,aguaLog);}}/>}
             {aba==="dieta"&&proto&&<Dieta protocolo={proto} perfil={perfil} onUpdateProtocolo={p=>{setProto(p);syncStorage(perfil,p,pesosLog,aguaLog);}}/>}
+            {aba==="medidas"&&<Medidas perfil={perfil} pesosLog={pesosLog} onPesoIdealAtualizado={v=>setPesoIdealReal(v)}/>}
             {aba==="esporte"&&<Esporte perfil={perfil}/>}
             {aba==="perfil"&&<Perfil perfil={perfil} onLogout={onLogout} onRefazerProtocolo={async(novoPerfil)=>{
               setLoading(true);
