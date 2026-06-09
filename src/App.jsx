@@ -778,9 +778,182 @@ function Treinos({ protocolo, perfil, onUpdateProtocolo }) {
 }
 
 // ─── DIETA ────────────────────────────────────────────────────────────────────
+// SUBSTITUA toda a função Dieta por esta versão atualizada
+
 function Dieta({ protocolo, perfil, onUpdateProtocolo }) {
   const [msgs,setMsgs]=useState([{role:"ai",text:`Olá ${perfil.nome.split(" ")[0]}! Sou sua Nutricionista IA 🥗 Posso substituir alimentos e o cardápio será ATUALIZADO automaticamente!`}]);
   const [input,setInput]=useState(""); const [load,setLoad]=useState(false);
+  const [showLista, setShowLista]=useState(false);
+
+  // ── GERAR PDF DA DIETA ─────────────────────────────────────────────────────
+  function gerarPDF() {
+    const isMassa = perfil.objetivo === "massa";
+    const tipoDieta = isMassa ? "BULKING" : "CUTTING";
+
+    const html = `
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Dieta IRONCUT — ${perfil.nome}</title>
+<style>
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family: Arial, sans-serif; background: #fff; color: #111; padding: 32px; }
+  .header { text-align:center; border-bottom: 3px solid #00D4C8; padding-bottom: 20px; margin-bottom: 24px; }
+  .logo { font-size: 32px; font-weight: 900; letter-spacing: 6px; color: #111; }
+  .logo span { color: #00D4C8; }
+  .subtitle { font-size: 11px; letter-spacing: 3px; text-transform: uppercase; color: #999; margin-top: 4px; }
+  .tipo { display: inline-block; background: #00D4C8; color: #000; font-size: 12px; font-weight: 700; letter-spacing: 2px; padding: 4px 16px; text-transform: uppercase; margin-top: 10px; }
+  .info-row { display: flex; justify-content: space-between; background: #f5f5f5; padding: 12px 20px; margin-bottom: 24px; border-left: 4px solid #00D4C8; }
+  .info-item { text-align: center; }
+  .info-val { font-size: 22px; font-weight: 900; color: #00D4C8; }
+  .info-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: #999; }
+  .section-title { font-size: 10px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; color: #999; margin-bottom: 12px; }
+  .meal { margin-bottom: 16px; border: 1px solid #eee; page-break-inside: avoid; }
+  .meal-head { background: #f9f9f9; border-bottom: 1px solid #eee; padding: 10px 16px; display: flex; align-items: center; gap: 12px; }
+  .meal-time { font-size: 11px; font-weight: 700; letter-spacing: 2px; color: #00D4C8; }
+  .meal-name { font-size: 14px; font-weight: 700; text-transform: uppercase; }
+  .meal-body { padding: 10px 16px; }
+  .meal-item { font-size: 13px; color: #444; padding: 3px 0; display: flex; gap: 8px; align-items: flex-start; }
+  .meal-item::before { content: "—"; color: #00D4C8; flex-shrink: 0; font-size: 10px; margin-top: 2px; }
+  .supl { margin-top: 20px; }
+  .supl-item { display: flex; gap: 8px; font-size: 13px; color: #444; padding: 6px 0; border-bottom: 1px solid #f0f0f0; }
+  .supl-item::before { content: "💊"; flex-shrink:0; }
+  .footer { margin-top: 32px; padding-top: 16px; border-top: 1px solid #eee; text-align: center; font-size: 11px; color: #bbb; letter-spacing: 1px; }
+  @media print { body { padding: 16px; } }
+</style>
+</head>
+<body>
+  <div class="header">
+    <div class="logo"><span>IRON</span>CUT</div>
+    <div class="subtitle">Protocolo de Transformação Corporal com IA</div>
+    <div class="tipo">Dieta ${tipoDieta}</div>
+  </div>
+
+  <div class="info-row">
+    <div class="info-item"><div class="info-val">${protocolo.kcal}</div><div class="info-label">Kcal / Dia</div></div>
+    <div class="info-item"><div class="info-val">${protocolo.prot}g</div><div class="info-label">Proteína</div></div>
+    <div class="info-item"><div class="info-val">${protocolo.carb}g</div><div class="info-label">Carboidrato</div></div>
+    <div class="info-item"><div class="info-val">${protocolo.gord}g</div><div class="info-label">Gordura</div></div>
+    <div class="info-item"><div class="info-val">${perfil.nome.split(" ")[0]}</div><div class="info-label">Aluno</div></div>
+  </div>
+
+  <div class="section-title">Plano Alimentar Diário</div>
+
+  ${(protocolo.refeicoes||[]).map(ref => `
+  <div class="meal">
+    <div class="meal-head">
+      <div class="meal-time">${ref.h}</div>
+      <div class="meal-name">${ref.n}</div>
+    </div>
+    <div class="meal-body">
+      ${ref.it.map(it => `<div class="meal-item">${it}</div>`).join("")}
+    </div>
+  </div>`).join("")}
+
+  ${protocolo.suplementos?.length ? `
+  <div class="supl">
+    <div class="section-title" style="margin-top:20px">Suplementação</div>
+    ${protocolo.suplementos.map(s => `<div class="supl-item">${s}</div>`).join("")}
+  </div>` : ""}
+
+  <div class="footer">
+    IRONCUT 21D — Gerado em ${new Date().toLocaleDateString("pt-BR")} • appironcut.com
+  </div>
+</body>
+</html>`;
+
+    const blob = new Blob([html], { type: "text/html;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const win = window.open(url, "_blank");
+    if (win) {
+      win.onload = () => {
+        setTimeout(() => { win.print(); }, 500);
+      };
+    }
+  }
+
+  // ── GERAR LISTA DE COMPRAS SEMANAL ────────────────────────────────────────
+  function gerarListaCompras() {
+    if (!protocolo?.refeicoes) return {};
+
+    // Extrai todos os itens de todas as refeições
+    const todosItens = protocolo.refeicoes.flatMap(ref => ref.it);
+
+    // Parser para extrair quantidade e item
+    function parsearItem(texto) {
+      // Padrões: "200g frango", "3 ovos", "1 banana", "40g aveia", "½ abacate"
+      const match = texto.match(/^([\d½¼¾,.]+\s*(?:g|kg|ml|l|col|dose|fatia|fatias|xícara|xícaras|porção)?\s*(?:de\s*)?)/i);
+      const qtd = match ? match[1].trim() : "1x";
+      const nome = texto.replace(/^[\d½¼¾,.]+\s*(?:g|kg|ml|l|col\.?|dose|fatia|fatias|xícara|xícaras|porção)?\s*(?:de\s*)?/i, "").trim();
+      return { qtd, nome: nome || texto };
+    }
+
+    // Agrupa por categoria
+    const categorias = {
+      "🥩 Proteínas": [],
+      "🍚 Carboidratos": [],
+      "🥗 Vegetais e Frutas": [],
+      "🥛 Laticínios e Ovos": [],
+      "🫒 Gorduras e Temperos": [],
+      "💊 Suplementos": [],
+      "☕ Bebidas": [],
+      "📦 Outros": [],
+    };
+
+    function categorizar(texto) {
+      const t = texto.toLowerCase();
+      if (/(frango|carne|atum|salmão|peixe|whey|proteína|ovo|peito)/i.test(t)) return "🥩 Proteínas";
+      if (/(arroz|batata|pão|aveia|macarrão|mandioca|feijão|lentilha|carboidrato|granola|mel)/i.test(t)) return "🍚 Carboidratos";
+      if (/(banana|maçã|fruta|salada|brócolis|legume|tomate|alface|espinafre|pepino|vegetal|verdura|iogurte)/i.test(t)) return "🥗 Vegetais e Frutas";
+      if (/(iogurte|leite|queijo|ovo|requeijão)/i.test(t)) return "🥛 Laticínios e Ovos";
+      if (/(azeite|castanha|amendoim|abacate|pasta|óleo|gordura)/i.test(t)) return "🫒 Gorduras e Temperos";
+      if (/(creatina|whey|suplemento|vitamina|cafeína|dose|ômega)/i.test(t)) return "💊 Suplementos";
+      if (/(café|chá|água|suco)/i.test(t)) return "☕ Bebidas";
+      return "📦 Outros";
+    }
+
+    // Agrupa itens iguais e multiplica por 7
+    const agrupado = {};
+    todosItens.forEach(item => {
+      const { qtd, nome } = parsearItem(item);
+      const chave = nome.toLowerCase().trim();
+      if (!agrupado[chave]) {
+        agrupado[chave] = { nome, qtd, count: 0, categoria: categorizar(item) };
+      }
+      agrupado[chave].count++;
+    });
+
+    // Organiza por categoria com quantidade semanal
+    Object.values(agrupado).forEach(({ nome, qtd, count, categoria }) => {
+      // Extrai número da quantidade para multiplicar
+      const numMatch = qtd.match(/[\d.]+/);
+      const unidadeMatch = qtd.match(/[a-zA-ZgGkKmMlLç½¼¾]+/g);
+      const unidade = unidadeMatch ? unidadeMatch.join("") : "x";
+
+      let qtdSemanal;
+      if (numMatch) {
+        const num = parseFloat(numMatch[0]);
+        const total = (num * count * 7).toFixed(0);
+        qtdSemanal = `${total}${unidade}`;
+      } else {
+        qtdSemanal = `${count * 7}x`;
+      }
+
+      if (categorias[categoria]) {
+        // Evita duplicatas
+        const jaExiste = categorias[categoria].find(i => i.nome.toLowerCase() === nome.toLowerCase());
+        if (!jaExiste) {
+          categorias[categoria].push({ nome, qtd: qtdSemanal });
+        }
+      }
+    });
+
+    // Remove categorias vazias
+    return Object.fromEntries(
+      Object.entries(categorias).filter(([, itens]) => itens.length > 0)
+    );
+  }
 
   async function send(msg){
     const m=msg||input; if(!m.trim())return;
@@ -795,17 +968,128 @@ function Dieta({ protocolo, perfil, onUpdateProtocolo }) {
 
   const quickChips=["Não gosto de ovo de manhã, o que substituir?","Opção vegetariana para o almoço","Substitua frango por outra proteína","Não tenho batata-doce, alternativas?","Lanche rápido sem precisar cozinhar","O que comer pré-treino em 5 minutos?"];
 
+  const lista = showLista ? gerarListaCompras() : {};
+
   return(
     <div>
       <div className="sec-label">Plano Alimentar</div>
-      <p className="sec-title">DIETA {perfil.objetivo==="massa"?"BULKING":"CUTTING"}</p>
-      {protocolo?.kcal&&(<div className="macro-grid" style={{marginBottom:18}}><div className="card macro-card"><div className="macro-val">{protocolo.kcal}</div><div style={{fontSize:11,color:C.accent,letterSpacing:1,textTransform:"uppercase",marginTop:2}}>kcal/dia</div><div className="macro-label">Calorias</div></div><div className="card macro-card"><div className="macro-val">{protocolo.prot}<span style={{fontSize:14,color:C.muted}}> g</span></div><div style={{fontSize:11,color:C.accent,letterSpacing:1,textTransform:"uppercase",marginTop:2}}>por dia</div><div className="macro-label">Proteína</div></div><div className="card macro-card"><div className="macro-val">{protocolo.carb}<span style={{fontSize:14,color:C.muted}}> g</span></div><div style={{fontSize:11,color:C.accent,letterSpacing:1,textTransform:"uppercase",marginTop:2}}>por dia</div><div className="macro-label">Carboidrato</div></div></div>)}
+
+      {/* TÍTULO + BOTÕES */}
+      <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:20,gap:12,flexWrap:"wrap"}}>
+        <p style={{fontFamily:"'Bebas Neue',cursive",fontSize:34,letterSpacing:1,margin:0}}>
+          DIETA {perfil.objetivo==="massa"?"BULKING":"CUTTING"}
+        </p>
+        <div style={{display:"flex",gap:8,flexShrink:0}}>
+          <button
+            onClick={gerarPDF}
+            style={{
+              display:"flex",alignItems:"center",gap:6,
+              padding:"8px 14px",background:"transparent",
+              border:`1px solid rgba(102,255,240,.3)`,borderRadius:7,
+              color:"#66FFF0",fontFamily:"'Barlow Condensed',sans-serif",
+              fontWeight:700,fontSize:12,letterSpacing:1.5,
+              textTransform:"uppercase",cursor:"pointer",
+              transition:"all .2s",whiteSpace:"nowrap"
+            }}
+            onMouseOver={e=>e.currentTarget.style.background="rgba(102,255,240,.08)"}
+            onMouseOut={e=>e.currentTarget.style.background="transparent"}
+          >
+            📄 Exportar PDF
+          </button>
+          <button
+            onClick={()=>setShowLista(s=>!s)}
+            style={{
+              display:"flex",alignItems:"center",gap:6,
+              padding:"8px 14px",
+              background:showLista?"rgba(102,255,240,.15)":"transparent",
+              border:`1px solid ${showLista?"rgba(102,255,240,.5)":"rgba(102,255,240,.3)"}`,
+              borderRadius:7,color:"#66FFF0",
+              fontFamily:"'Barlow Condensed',sans-serif",
+              fontWeight:700,fontSize:12,letterSpacing:1.5,
+              textTransform:"uppercase",cursor:"pointer",
+              transition:"all .2s",whiteSpace:"nowrap"
+            }}
+          >
+            🛒 Lista de Compras
+          </button>
+        </div>
+      </div>
+
+      {/* LISTA DE COMPRAS SEMANAL */}
+      {showLista && (
+        <div style={{
+          background:"#0F0F0F",border:"1px solid rgba(102,255,240,.2)",
+          borderRadius:12,padding:"20px 24px",marginBottom:20,
+          animation:"fadeUp .3s ease"
+        }}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
+            <div>
+              <p style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,letterSpacing:2,color:"#66FFF0"}}>
+                🛒 LISTA DE COMPRAS — 7 DIAS
+              </p>
+              <p style={{fontSize:11,color:"#666",marginTop:2}}>
+                Quantidades calculadas para uma semana completa
+              </p>
+            </div>
+            <button
+              onClick={()=>{
+                // Copia para clipboard
+                const texto = Object.entries(lista).map(([cat, itens]) =>
+                  `${cat}\n${itens.map(i => `  • ${i.qtd} ${i.nome}`).join("\n")}`
+                ).join("\n\n");
+                navigator.clipboard.writeText(texto).then(()=>alert("Lista copiada! 📋"));
+              }}
+              style={{
+                padding:"6px 14px",background:"transparent",
+                border:"1px solid #333",borderRadius:6,
+                color:"#666",fontFamily:"'Barlow Condensed',sans-serif",
+                fontWeight:700,fontSize:11,letterSpacing:1,
+                textTransform:"uppercase",cursor:"pointer"
+              }}
+            >
+              📋 Copiar
+            </button>
+          </div>
+
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(240px,1fr))",gap:12}}>
+            {Object.entries(lista).map(([categoria, itens]) => (
+              <div key={categoria} style={{
+                background:"rgba(255,255,255,.02)",border:"1px solid #1a1a1a",
+                borderRadius:8,padding:"14px 16px"
+              }}>
+                <p style={{
+                  fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,
+                  fontSize:12,textTransform:"uppercase",letterSpacing:1,
+                  color:"#888",marginBottom:10
+                }}>{categoria}</p>
+                {itens.map((item, i) => (
+                  <div key={i} style={{
+                    display:"flex",justifyContent:"space-between",alignItems:"center",
+                    padding:"5px 0",borderBottom:"1px solid rgba(255,255,255,.04)",
+                    fontSize:13
+                  }}>
+                    <span style={{color:"#ccc"}}>{item.nome}</span>
+                    <span style={{
+                      color:"#66FFF0",fontWeight:700,fontSize:12,
+                      background:"rgba(102,255,240,.08)",padding:"2px 8px",
+                      borderRadius:4,whiteSpace:"nowrap",marginLeft:8
+                    }}>{item.qtd}</span>
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {protocolo?.kcal&&(<div className="macro-grid" style={{marginBottom:18}}><div className="card macro-card"><div className="macro-val">{protocolo.kcal}</div><div style={{fontSize:11,color:"#66FFF0",letterSpacing:1,textTransform:"uppercase",marginTop:2}}>kcal/dia</div><div className="macro-label">Calorias</div></div><div className="card macro-card"><div className="macro-val">{protocolo.prot}<span style={{fontSize:14,color:"#666"}}> g</span></div><div style={{fontSize:11,color:"#66FFF0",letterSpacing:1,textTransform:"uppercase",marginTop:2}}>por dia</div><div className="macro-label">Proteína</div></div><div className="card macro-card"><div className="macro-val">{protocolo.carb}<span style={{fontSize:14,color:"#666"}}> g</span></div><div style={{fontSize:11,color:"#66FFF0",letterSpacing:1,textTransform:"uppercase",marginTop:2}}>por dia</div><div className="macro-label">Carboidrato</div></div></div>)}
       {protocolo?.refeicoes&&(<div className="meal-grid">{protocolo.refeicoes.map((ref,i)=>(<div key={i} className="card meal-card"><div className="meal-head"><div className="meal-time">{ref.h}</div><div className="meal-name">{ref.n}</div></div><div className="meal-body">{ref.it.map((it,j)=><div key={j} className="meal-item">{it}</div>)}</div></div>))}</div>)}
-      {protocolo?.suplementos&&(<div className="card" style={{padding:"18px 20px",marginBottom:18}}><p style={{fontFamily:"'Barlow Condensed'",fontWeight:700,fontSize:15,textTransform:"uppercase",letterSpacing:1,marginBottom:12}}>Suplementação</p>{protocolo.suplementos.map((s,i)=>(<div key={i} style={{display:"flex",alignItems:"center",gap:10,padding:"9px 0",borderBottom:`1px solid ${C.border}`,fontSize:13}}><span style={{color:C.accent}}>💊</span><span style={{color:C.lgray}}>{s}</span></div>))}</div>)}
+      {protocolo?.suplementos&&(<div className="card" style={{padding:"18px 20px",marginBottom:18}}><p style={{fontFamily:"'Barlow Condensed'",fontWeight:700,fontSize:15,textTransform:"uppercase",letterSpacing:1,marginBottom:12}}>Suplementação</p>{protocolo.suplementos.map((s,i)=>(<div key={i} style={{display:"flex",alignItems:"center",gap:10,padding:"9px 0",borderBottom:`1px solid #202020`,fontSize:13}}><span style={{color:"#66FFF0"}}>💊</span><span style={{color:"#BBBBBB"}}>{s}</span></div>))}</div>)}
       <div className="card ia-section"><div className="ia-header"><div className="ia-dot"/><p className="ia-title">Nutricionista IA</p><p className="ia-sub">Adapte seu cardápio livremente</p></div><div className="chat-msgs">{msgs.map((m,i)=>(m.text==="typing"?<div key={i} className="cmsg ai typing"><span/><span/><span/></div>:<div key={i} className={`cmsg ${m.isUpdate?"update":m.role}`}>{m.text}</div>))}</div><div className="chips">{quickChips.map(c=><div key={c} className="chip" onClick={()=>send(c)}>{c}</div>)}</div><div className="chat-input-row"><input className="chat-input" placeholder="Ex: Não gosto de ovo, o que posso comer no café?" value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>e.key==="Enter"&&send()}/><button className="chat-send" onClick={()=>send()} disabled={load}>Enviar</button></div></div>
     </div>
   );
 }
+
 
 // ─── PERFIL ───────────────────────────────────────────────────────────────────
 function Perfil({ perfil, onLogout, onRefazerProtocolo }) {
