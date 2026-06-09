@@ -798,15 +798,18 @@ function Dashboard({ perfil, protocolo, pesosLog, onAddPeso, aguaLog, onToggleAg
                 <span style={{fontSize:11,fontWeight:700,letterSpacing:2,textTransform:"uppercase",color:C.muted}}>{isMassa?"Superávit":"Déficit"} do dia</span>
                 <span style={{fontSize:12,fontWeight:700,color:corDeficit}}>{labelDeficit}</span>
               </div>
-              {calTreino>0
-                ?[{label:"TMB",val:`${tmbVal} kcal`,cor:C.muted},{label:"+ Treino (relógio)",val:`+${calTreino} kcal`,cor:"#22c55e"},{label:"− Meta dieta",val:`−${metaKcal} kcal`,cor:"#ff6b6b"}]
-                :[{label:"TDEE (sem treino informado)",val:`${tdeeVal} kcal`,cor:C.muted},{label:"− Meta dieta",val:`−${metaKcal} kcal`,cor:"#ff6b6b"}]
-              }.map(({label,val,cor})=>(
-                <div key={label} style={{display:"flex",justifyContent:"space-between",fontSize:13,padding:"4px 0",borderBottom:"1px solid rgba(255,255,255,.04)"}}>
-                  <span style={{color:C.muted}}>{label}</span>
-                  <span style={{color:cor,fontWeight:600}}>{val}</span>
-                </div>
-              ))}
+              {calTreino>0?(
+                <>
+                  <div style={{display:"flex",justifyContent:"space-between",fontSize:13,padding:"4px 0",borderBottom:"1px solid rgba(255,255,255,.04)"}}><span style={{color:C.muted}}>TMB</span><span style={{color:C.muted,fontWeight:600}}>{tmbVal} kcal</span></div>
+                  <div style={{display:"flex",justifyContent:"space-between",fontSize:13,padding:"4px 0",borderBottom:"1px solid rgba(255,255,255,.04)"}}><span style={{color:C.muted}}>+ Treino (relógio)</span><span style={{color:"#22c55e",fontWeight:600}}>+{calTreino} kcal</span></div>
+                  <div style={{display:"flex",justifyContent:"space-between",fontSize:13,padding:"4px 0",borderBottom:"1px solid rgba(255,255,255,.04)"}}><span style={{color:C.muted}}>− Meta dieta</span><span style={{color:"#ff6b6b",fontWeight:600}}>−{metaKcal} kcal</span></div>
+                </>
+              ):(
+                <>
+                  <div style={{display:"flex",justifyContent:"space-between",fontSize:13,padding:"4px 0",borderBottom:"1px solid rgba(255,255,255,.04)"}}><span style={{color:C.muted}}>TDEE (sem treino informado)</span><span style={{color:C.muted,fontWeight:600}}>{tdeeVal} kcal</span></div>
+                  <div style={{display:"flex",justifyContent:"space-between",fontSize:13,padding:"4px 0",borderBottom:"1px solid rgba(255,255,255,.04)"}}><span style={{color:C.muted}}>− Meta dieta</span><span style={{color:"#ff6b6b",fontWeight:600}}>−{metaKcal} kcal</span></div>
+                </>
+              )}
               <div style={{display:"flex",justifyContent:"space-between",fontSize:15,fontWeight:700,marginTop:10,paddingTop:10,borderTop:"1px solid rgba(255,255,255,.08)"}}>
                 <span style={{color:C.text}}>{isMassa?"= Superávit real":"= Déficit real"}</span>
                 <span style={{color:corDeficit,fontFamily:"'Bebas Neue',cursive",fontSize:22}}>{deficitComTreino>0?"+":""}{deficitComTreino} kcal</span>
