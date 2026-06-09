@@ -700,6 +700,33 @@ function Dashboard({ perfil, protocolo, pesosLog, onAddPeso, aguaLog, onToggleAg
 
   return(
     <div>
+      <div className="card-accent motiv-card" style={{marginBottom:18}}><div className="motiv-icon">{motiv.icon}</div><div className="motiv-text">"{motiv.text}"</div><div className="motiv-author">— {motiv.author}</div></div>
+      <div className="sec-label">Bem-vindo de volta</div>
+      <p style={{fontFamily:"'Bebas Neue'",fontSize:30,letterSpacing:1,marginBottom:18}}>OLÁ, {perfil.nome.split(" ")[0].toUpperCase()}!{" "}<span className={`badge ${isMassa?"badge-mass":"badge-fat"}`}>{isMassa?"💪 MASSA":"🔥 FAT LOSS"}</span></p>
+      <div className="dash-grid" style={{marginBottom:18}}>
+        <div className="card-accent dc"><div className="dc-label">Peso Atual</div><div className="dc-val">{pesoAtual}kg</div><div className="dc-sub">Meta: {ideal}kg</div></div>
+        <div className="card dc">
+          <div className="dc-label">
+            {isMassa
+              ? (parseFloat(perdido)>=0?"Ganho":"Perdido")
+              : (parseFloat(perdido)>=0?"Perdido":"Ganhou")
+            }
+          </div>
+          <div className="dc-val" style={{
+            color: isMassa
+              ? (parseFloat(perdido)>=0?C.purple:"#ff6b6b")
+              : (parseFloat(perdido)>=0?C.accent:"#ff6b6b"),
+            fontSize:32
+          }}>
+            {parseFloat(perdido)<0?"+":""}{Math.abs(parseFloat(perdido)).toFixed(1)}kg
+          </div>
+          <div className="dc-sub">Desde o início</div>
+        </div>
+        <div className="card dc"><div className="dc-label">Falta</div><div className="dc-val" style={{fontSize:32}}>{falta}kg</div><div className="dc-sub">Para o peso ideal</div></div>
+        <div className="card dc"><div className="dc-label">IMC Atual</div><div className="dc-val" style={{fontSize:30}}>{imc}</div><div className="dc-sub">{clsIMC(parseFloat(imc))}</div></div>
+      </div>
+      <div className="card" style={{padding:"18px 20px",marginBottom:18}}><p style={{fontFamily:"'Barlow Condensed'",fontWeight:700,fontSize:15,textTransform:"uppercase",letterSpacing:1,marginBottom:4}}>Progresso na Meta</p><div className="prog-wrap"><div className="prog-fill" style={{width:`${progPct}%`}}/></div><div style={{display:"flex",justifyContent:"space-between",fontSize:12,color:C.muted}}><span>{perfil.peso}kg</span><span style={{color:C.accent,fontWeight:700}}>{progPct}% concluído</span><span>{ideal}kg</span></div></div>
+      <div className="card" style={{padding:"18px 20px",marginBottom:18}}><p style={{fontFamily:"'Barlow Condensed'",fontWeight:700,fontSize:15,textTransform:"uppercase",letterSpacing:1,marginBottom:12}}>Evolução do Peso</p>{pesosLog.length>=2?(<div className="chart-wrap"><svg width="100%" height="100%" viewBox={`0 0 ${cW} ${cH+20}`} preserveAspectRatio="none"><defs><linearGradient id="cg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={C.accent} stopOpacity=".25"/><stop offset="100%" stopColor={C.accent} stopOpacity="0"/></linearGradient></defs>{path&&<><path d={`${path} L${cW},${cH} L0,${cH} Z`} fill="url(#cg)"/><path d={path} fill="none" stroke={C.accent} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>{pesosLog.map((p,i)=>{const vals=pesosLog.map(x=>x.val);const mn=Math.min(...vals)-.5,mx=Math.max(...vals)+.5;const x=(i/(vals.length-1||1))*cW;const y=cH-((p.val-mn)/(mx-mn||1))*cH;return(<g key={i}><circle cx={x} cy={y} r="5" fill={C.accent} style={{filter:`drop-shadow(0 0 4px ${C.accent})`}}/><text x={x} y={cH+14} textAnchor="middle" fill={C.muted} fontSize="9" fontFamily="Barlow">{p.data.split("/").slice(0,2).join("/")}</text></g>);})}</>}</svg></div>):(<p style={{color:C.muted,fontSize:13,textAlign:"center",padding:"20px 0"}}>Registre seu peso diariamente para ver a evolução aqui.</p>)}<div className="weight-form"><input type="number" placeholder="Registrar peso de hoje (kg)" value={newP} onChange={e=>setNewP(e.target.value)}/><button onClick={()=>{if(newP){onAddPeso(parseFloat(newP));setNewP("");}}}> + Registrar</button></div></div>
       {(()=>{
         const score=calcScore(),streak=calcStreak(),dHoje=hoje(),checkHoje=checkLog[dHoje]||{treino:false,dieta:false};
         const nivel=score>=91?"🏆 Elite IRONCUT":score>=71?"⚡ Consistente":score>=41?"📈 Em Progresso":"🌱 Iniciante";
@@ -729,33 +756,6 @@ function Dashboard({ perfil, protocolo, pesosLog, onAddPeso, aguaLog, onToggleAg
           </div>
         );
       })()}
-      <div className="card-accent motiv-card" style={{marginBottom:18}}><div className="motiv-icon">{motiv.icon}</div><div className="motiv-text">"{motiv.text}"</div><div className="motiv-author">— {motiv.author}</div></div>
-      <div className="sec-label">Bem-vindo de volta</div>
-      <p style={{fontFamily:"'Bebas Neue'",fontSize:30,letterSpacing:1,marginBottom:18}}>OLÁ, {perfil.nome.split(" ")[0].toUpperCase()}!{" "}<span className={`badge ${isMassa?"badge-mass":"badge-fat"}`}>{isMassa?"💪 MASSA":"🔥 FAT LOSS"}</span></p>
-      <div className="dash-grid" style={{marginBottom:18}}>
-        <div className="card-accent dc"><div className="dc-label">Peso Atual</div><div className="dc-val">{pesoAtual}kg</div><div className="dc-sub">Meta: {ideal}kg</div></div>
-        <div className="card dc">
-          <div className="dc-label">
-            {isMassa
-              ? (parseFloat(perdido)>=0?"Ganho":"Perdido")
-              : (parseFloat(perdido)>=0?"Perdido":"Ganhou")
-            }
-          </div>
-          <div className="dc-val" style={{
-            color: isMassa
-              ? (parseFloat(perdido)>=0?C.purple:"#ff6b6b")
-              : (parseFloat(perdido)>=0?C.accent:"#ff6b6b"),
-            fontSize:32
-          }}>
-            {parseFloat(perdido)<0?"+":""}{Math.abs(parseFloat(perdido)).toFixed(1)}kg
-          </div>
-          <div className="dc-sub">Desde o início</div>
-        </div>
-        <div className="card dc"><div className="dc-label">Falta</div><div className="dc-val" style={{fontSize:32}}>{falta}kg</div><div className="dc-sub">Para o peso ideal</div></div>
-        <div className="card dc"><div className="dc-label">IMC Atual</div><div className="dc-val" style={{fontSize:30}}>{imc}</div><div className="dc-sub">{clsIMC(parseFloat(imc))}</div></div>
-      </div>
-      <div className="card" style={{padding:"18px 20px",marginBottom:18}}><p style={{fontFamily:"'Barlow Condensed'",fontWeight:700,fontSize:15,textTransform:"uppercase",letterSpacing:1,marginBottom:4}}>Progresso na Meta</p><div className="prog-wrap"><div className="prog-fill" style={{width:`${progPct}%`}}/></div><div style={{display:"flex",justifyContent:"space-between",fontSize:12,color:C.muted}}><span>{perfil.peso}kg</span><span style={{color:C.accent,fontWeight:700}}>{progPct}% concluído</span><span>{ideal}kg</span></div></div>
-      <div className="card" style={{padding:"18px 20px",marginBottom:18}}><p style={{fontFamily:"'Barlow Condensed'",fontWeight:700,fontSize:15,textTransform:"uppercase",letterSpacing:1,marginBottom:12}}>Evolução do Peso</p>{pesosLog.length>=2?(<div className="chart-wrap"><svg width="100%" height="100%" viewBox={`0 0 ${cW} ${cH+20}`} preserveAspectRatio="none"><defs><linearGradient id="cg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={C.accent} stopOpacity=".25"/><stop offset="100%" stopColor={C.accent} stopOpacity="0"/></linearGradient></defs>{path&&<><path d={`${path} L${cW},${cH} L0,${cH} Z`} fill="url(#cg)"/><path d={path} fill="none" stroke={C.accent} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>{pesosLog.map((p,i)=>{const vals=pesosLog.map(x=>x.val);const mn=Math.min(...vals)-.5,mx=Math.max(...vals)+.5;const x=(i/(vals.length-1||1))*cW;const y=cH-((p.val-mn)/(mx-mn||1))*cH;return(<g key={i}><circle cx={x} cy={y} r="5" fill={C.accent} style={{filter:`drop-shadow(0 0 4px ${C.accent})`}}/><text x={x} y={cH+14} textAnchor="middle" fill={C.muted} fontSize="9" fontFamily="Barlow">{p.data.split("/").slice(0,2).join("/")}</text></g>);})}</>}</svg></div>):(<p style={{color:C.muted,fontSize:13,textAlign:"center",padding:"20px 0"}}>Registre seu peso diariamente para ver a evolução aqui.</p>)}<div className="weight-form"><input type="number" placeholder="Registrar peso de hoje (kg)" value={newP} onChange={e=>setNewP(e.target.value)}/><button onClick={()=>{if(newP){onAddPeso(parseFloat(newP));setNewP("");}}}> + Registrar</button></div></div>
       <div className="card-accent water-section"><div className="water-header"><div><p className="water-title">💧 Hidratação Diária</p><p className="water-meta">Meta: {litrosNecessarios}L por dia ({garrafas} garrafas de 500ml)</p></div><div style={{textAlign:"right"}}><div className="water-total">{litrosHoje}L / {litrosNecessarios}L</div><div style={{fontSize:11,color:C.muted}}>{aguaPct}% da meta</div></div></div><div className="water-bar-bg"><div className="water-bar-fill" style={{width:`${aguaPct}%`}}/></div><div className="water-bottles">{Array.from({length:garrafas},(_,i)=>(<div key={i} className="bottle" onClick={()=>onToggleAgua(i+1)}><div className={`bottle-icon${aguaHoje>i?" full":""}`}>💧</div><div className="bottle-label">{(i+1)*500}ml</div></div>))}</div>{aguaHoje>=garrafas&&(<p style={{textAlign:"center",marginTop:10,fontSize:13,color:C.accent,fontWeight:700}}>✅ Meta de hidratação atingida hoje!</p>)}</div>
       {protocolo?.kcal&&(<div className="card" style={{padding:"18px 20px",marginTop:18}}><p style={{fontFamily:"'Barlow Condensed'",fontWeight:700,fontSize:15,textTransform:"uppercase",letterSpacing:1,marginBottom:12}}>Distribuição de Macros</p><div className="macro-grid"><div className="card macro-card"><div className="macro-val">{protocolo.kcal}</div><div className="macro-label">kcal/dia</div></div><div className="card macro-card"><div className="macro-val">{protocolo.prot}g</div><div className="macro-label">Proteína</div></div><div className="card macro-card"><div className="macro-val">{protocolo.carb}g</div><div className="macro-label">Carboidrato</div></div></div>{protocolo.dica&&(<div style={{background:"rgba(102,255,240,.05)",border:`1px solid rgba(102,255,240,.15)`,borderRadius:8,padding:"12px 16px",fontSize:13,color:C.lgray}}>💡 <strong style={{color:C.accent}}>Dica IA:</strong> {protocolo.dica}</div>)}</div>)}
 
