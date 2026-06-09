@@ -1195,9 +1195,7 @@ export default function App() {
   const [showLogin,setLogin]   = useState(false);
   // ✅ NOVO: estado de bloqueio
   const [bloqueado, setBloqueado] = useState(false);
-  const [checkLog, setCheckLog] = useState(()=>{
-    try{ return JSON.parse(localStorage.getItem(`ic_check_${perfil?.email}`)||"{}"); }catch{return {};}
-  });
+const [checkLog, setCheckLog] = useState({});
 
   // Restore session on mount
   useEffect(()=>{
@@ -1211,6 +1209,8 @@ export default function App() {
           setPerfil(conta.perfil);
           setProto(conta.protocolo);
           setPesos(conta.pesosLog||[]);
+          const savedCheck = JSON.parse(localStorage.getItem(`ic_check_${conta.perfil.email}`) || "{}");
+setCheckLog(savedCheck);
           setAguaLog(conta.aguaLog||{});
           setBloqueado(!liberado);
           setTela("app");
@@ -1219,6 +1219,8 @@ export default function App() {
           if(c[sess.email]&&c[sess.email].senha===sess.senha){
             const liberado = await verificarComprador(sess.email).catch(()=>true);
             setPerfil(c[sess.email].perfil);
+            const savedCheck = JSON.parse(localStorage.getItem(`ic_check_${c[sess.email].perfil.email}`) || "{}");
+setCheckLog(savedCheck);
             setProto(c[sess.email].protocolo);
             setPesos(c[sess.email].pesosLog||[]);
             setAguaLog(c[sess.email].aguaLog||{});
