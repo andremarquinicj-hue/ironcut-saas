@@ -899,6 +899,20 @@ function Treinos({ protocolo, perfil, onUpdateProtocolo }) {
 
   function salvarCarga(dia,idx,val){if(!val.trim())return;const key=`${dia}-${idx}`;const atual=cargas[key]||{carga:"",historico:[]};const hist=atual.historico.filter(h=>h!==val).slice(-4);hist.push(val);const novo={...cargas,[key]:{carga:val,historico:hist}};setCargas(novo);localStorage.setItem(CARGA_KEY,JSON.stringify(novo));}
 
+  function sugestaoProgressao(key){
+    const dado=cargas[key]||{carga:"",historico:[]};
+    const hist=dado.historico;
+    if(hist.length<3)return null;
+    // Pega as últimas 3 entradas
+    const ultimas3=hist.slice(-3).map(h=>parseFloat(h)||0);
+    const todasIguais=ultimas3.every(v=>v===ultimas3[0]&&v>0);
+    if(!todasIguais)return null;
+    const cargaAtual=ultimas3[0];
+    // Sugere aumento: 2.5kg para cargas até 20kg, 5kg para acima
+    const aumento=cargaAtual<=20?2.5:5;
+    return{cargaAtual,sugerida:cargaAtual+aumento,aumento};
+  }
+
   async function send(msg){
     const m=msg||input; if(!m.trim())return;
     setMsgs(p=>[...p,{role:"user",text:m}]); setInput(""); setLoad(true);
@@ -917,7 +931,46 @@ function Treinos({ protocolo, perfil, onUpdateProtocolo }) {
       <div className="sec-label">Protocolo de Treinos</div>
       <p className="sec-title">TREINOS {perfil.objetivo==="massa"?"HIPERTROFIA":"IRONCUT"}</p>
       <div className="week-grid">{dias.map(([dia,info])=>(<div key={dia} className="card wcard"><div className="wcard-n">{dia}</div><div className="wcard-name">{info.nome}</div><div className="wcard-desc">{info.ex.length} exercícios</div></div>))}</div>
-      {dias.map(([dia,info])=>(<div key={dia} style={{marginBottom:16}}><p style={{fontFamily:"'Barlow Condensed'",fontWeight:700,fontSize:15,textTransform:"uppercase",letterSpacing:1,marginBottom:8,color:C.accent}}>{dia} — {info.nome}</p><div className="treino-list card">{info.ex.map(([nome,sets],i)=>{const key=`${dia}-${i}`;const dadoCarga=cargas[key]||{carga:"",historico:[]};return(<div key={i}><div className="treino-item"><div className="treino-num">{String(i+1).padStart(2,"0")}</div><div className="treino-name">{nome}</div><div className="treino-sets">{sets}</div></div><div className="carga-row"><span className="carga-label">Carga:</span><input className="carga-input" type="number" placeholder="0" value={dadoCarga.carga} onChange={e=>{const novo={...cargas,[key]:{...dadoCarga,carga:e.target.value}};setCargas(novo);localStorage.setItem(CARGA_KEY,JSON.stringify(novo));}} onBlur={e=>salvarCarga(dia,i,e.target.value)}/><span className="carga-unit">kg</span>{dadoCarga.historico.length>1&&(<div className="carga-hist"><span style={{fontSize:10,color:"#444",marginRight:2}}>Histórico:</span>{dadoCarga.historico.slice(0,-1).slice(-3).map((h,j)=>(<span key={j} className="carga-hist-item">{h}kg</span>))}</div>)}</div></div>);})}</div></div>))}
+      {dias.map(([dia,info])=>(<div key={dia} style={{marginBottom:16}}><p style={{fontFamily:"'Barlow Condensed'",fontWeight:700,fontSize:15,textTransform:"uppercase",letterSpacing:1,marginBottom:8,color:C.accent}}>{dia} — {info.nome}</p><div className="treino-list card">{info.ex.map(([nome,sets],i)=>{const key=`${dia}-${i}`;const dadoCarga=cargas[key]||{carga:"",historico:[]};return(<div key={i}><div className="treino-item"><div className="treino-num">{String(i+1).padStart(2,"0")}</div><div className="treino-name">{nome}</div><div className="treino-sets">{sets}</div></div>{(()=>{
+                  const prog=sugestaoProgressao(key);
+                  return(
+                    <>
+                      <div className="carga-row">
+                        <span className="carga-label">Carga:</span>
+                        <input className="carga-input" type="number" placeholder="0" value={dadoCarga.carga} onChange={e=>{const novo={...cargas,[key]:{...dadoCarga,carga:e.target.value}};setCargas(novo);localStorage.setItem(CARGA_KEY,JSON.stringify(novo));}} onBlur={e=>salvarCarga(dia,i,e.target.value)}/>
+                        <span className="carga-unit">kg</span>
+                        {dadoCarga.historico.length>1&&(<div className="carga-hist"><span style={{fontSize:10,color:"#444",marginRight:2}}>Histórico:</span>{dadoCarga.historico.slice(0,-1).slice(-3).map((h,j)=>(<span key={j} className="carga-hist-item">{h}kg</span>))}</div>)}
+                      </div>
+                      {prog&&(
+                        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"8px 18px 10px",background:"rgba(34,197,94,.06)",borderBottom:`1px solid ${C.border}`}}>
+                          <div style={{display:"flex",alignItems:"center",gap:8}}>
+                            <span style={{fontSize:14}}>⬆️</span>
+                            <div>
+                              <span style={{fontSize:11,fontWeight:700,color:"#22c55e",letterSpacing:1}}>HORA DE EVOLUIR!</span>
+                              <span style={{fontSize:11,color:"#666",marginLeft:6}}>Mesma carga por 3x seguidas</span>
+                            </div>
+                          </div>
+                          <button
+                            onClick={()=>{
+                              const novoVal=String(prog.sugerida);
+                              const novo={...cargas,[key]:{...dadoCarga,carga:novoVal}};
+                              setCargas(novo);
+                              localStorage.setItem(CARGA_KEY,JSON.stringify(novo));
+                            }}
+                            style={{
+                              padding:"4px 12px",background:"#22c55e",color:"#000",
+                              border:"none",borderRadius:5,fontFamily:"'Barlow Condensed',sans-serif",
+                              fontWeight:800,fontSize:12,letterSpacing:1,cursor:"pointer",
+                              whiteSpace:"nowrap"
+                            }}
+                          >
+                            +{prog.aumento}kg → {prog.sugerida}kg
+                          </button>
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}</div>);})}</div></div>))}
       <div className="card ia-section"><div className="ia-header"><div className="ia-dot"/><p className="ia-title">Personal IA</p><p className="ia-sub">Substitua exercícios e personalize seu treino</p></div><div className="chat-msgs">{msgs.map((m,i)=>(m.text==="typing"?<div key={i} className="cmsg ai typing"><span/><span/><span/></div>:<div key={i} className={`cmsg ${m.isUpdate?"update":m.role}`}>{m.text}</div>))}</div><div className="chips">{quickChips.map(c=><div key={c} className="chip" onClick={()=>send(c)}>{c}</div>)}</div><div className="chat-input-row"><input className="chat-input" placeholder="Ex: Não gosto de agachamento, o que posso substituir?" value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>e.key==="Enter"&&send()}/><button className="chat-send" onClick={()=>send()} disabled={load}>Enviar</button></div></div>
     </div>
   );
