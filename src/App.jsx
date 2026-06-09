@@ -1409,6 +1409,7 @@ function pesoIdealPorGordura(pesoAtual, pctGordura, objetivo, sexo) {
 // ─── ABA MEDIDAS ──────────────────────────────────────────────────────────────
 function Medidas({ perfil, pesosLog, onPesoIdealAtualizado }) {
   const MED_KEY = `ic_medidas_${perfil.email}`;
+  const [showGuia, setShowGuia] = useState(false);
   const [historico, setHistorico] = useState(() => {
     try { return JSON.parse(localStorage.getItem(MED_KEY) || "[]"); } catch { return []; }
   });
@@ -1535,7 +1536,137 @@ function Medidas({ perfil, pesosLog, onPesoIdealAtualizado }) {
       {/* FORMULÁRIO NOVO REGISTRO */}
       <div className="card" style={{padding:"20px 22px",marginBottom:18}}>
         <p style={{fontFamily:"'Barlow Condensed'",fontWeight:700,fontSize:15,textTransform:"uppercase",letterSpacing:1,marginBottom:4}}>Registrar Novas Medidas</p>
-        <p style={{fontSize:11,color:C.muted,marginBottom:16,lineHeight:1.5}}>Use uma fita métrica. Pescoço + Cintura{isFem?" + Quadril":""} são obrigatórios para calcular o % de gordura pela <strong style={{color:C.lgray}}>Fórmula US Navy</strong>.</p>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
+          <p style={{fontSize:11,color:C.muted,lineHeight:1.5}}>Use uma fita métrica. Pescoço + Cintura{isFem?" + Quadril":""} são obrigatórios para calcular o % de gordura pela <strong style={{color:C.lgray}}>Fórmula US Navy</strong>.</p>
+          <button onClick={()=>setShowGuia(true)} style={{flexShrink:0,marginLeft:12,padding:"6px 14px",background:"transparent",border:`1px solid rgba(102,255,240,.3)`,borderRadius:6,color:C.accent,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:11,letterSpacing:1,textTransform:"uppercase",cursor:"pointer",whiteSpace:"nowrap"}}>
+            📐 Ver como medir
+          </button>
+        </div>
+
+        {/* MODAL GUIA VISUAL */}
+        {showGuia && (
+          <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.95)",zIndex:200,display:"flex",alignItems:"center",justifyContent:"center",padding:16}} onClick={()=>setShowGuia(false)}>
+            <div style={{background:"#0F0F0F",border:"1px solid rgba(102,255,240,.2)",borderRadius:16,maxWidth:580,width:"100%",maxHeight:"90vh",overflowY:"auto",padding:24,animation:"fadeUp .3s ease"}} onClick={e=>e.stopPropagation()}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
+                <p style={{fontFamily:"'Bebas Neue',cursive",fontSize:22,letterSpacing:2,color:C.accent}}>📐 GUIA DE MEDIÇÕES</p>
+                <button onClick={()=>setShowGuia(false)} style={{background:"transparent",border:"1px solid #333",color:C.muted,borderRadius:6,padding:"4px 12px",cursor:"pointer",fontSize:16}}>✕</button>
+              </div>
+
+              {[
+                {
+                  key:"pescoco", emoji:"📏", titulo:"PESCOÇO",
+                  desc:"Meça abaixo do pomo de adão (gogó), na parte mais estreita do pescoço. Mantenha a cabeça reta olhando para frente.",
+                  svg:(
+                    <svg viewBox="0 0 160 140" width="100%" style={{maxWidth:160}}>
+                      <rect width="160" height="140" fill="#0A0A0A" rx="8"/>
+                      {/* cabeça */}
+                      <ellipse cx="80" cy="38" rx="22" ry="26" fill="#1a1a1a" stroke="#333" strokeWidth="1.5"/>
+                      {/* pescoço */}
+                      <rect x="68" y="60" width="24" height="28" rx="4" fill="#1a1a1a" stroke="#333" strokeWidth="1.5"/>
+                      {/* linha de medição */}
+                      <line x1="55" y1="74" x2="105" y2="74" stroke="#66FFF0" strokeWidth="2" strokeDasharray="4,3"/>
+                      <circle cx="55" cy="74" r="3" fill="#66FFF0"/>
+                      <circle cx="105" cy="74" r="3" fill="#66FFF0"/>
+                      {/* seta */}
+                      <text x="80" y="98" textAnchor="middle" fill="#66FFF0" fontSize="9" fontFamily="Arial" fontWeight="bold">← medir aqui →</text>
+                      <text x="80" y="112" textAnchor="middle" fill="#666" fontSize="8" fontFamily="Arial">abaixo do gogó</text>
+                    </svg>
+                  )
+                },
+                {
+                  key:"cintura", emoji:"📐", titulo:"CINTURA / ABDÔMEN",
+                  desc:"Meça na parte mais larga do abdômen — geralmente na altura do umbigo ou um pouco acima. Não prenda a barriga!",
+                  svg:(
+                    <svg viewBox="0 0 160 140" width="100%" style={{maxWidth:160}}>
+                      <rect width="160" height="140" fill="#0A0A0A" rx="8"/>
+                      {/* torso */}
+                      <path d="M50 20 Q40 50 42 90 Q55 100 80 102 Q105 100 118 90 Q120 50 110 20 Z" fill="#1a1a1a" stroke="#333" strokeWidth="1.5"/>
+                      {/* linha umbigo */}
+                      <line x1="35" y1="62" x2="125" y2="62" stroke="#66FFF0" strokeWidth="2" strokeDasharray="4,3"/>
+                      <circle cx="35" cy="62" r="3" fill="#66FFF0"/>
+                      <circle cx="125" cy="62" r="3" fill="#66FFF0"/>
+                      {/* umbigo */}
+                      <circle cx="80" cy="62" r="4" fill="#333" stroke="#555" strokeWidth="1"/>
+                      <text x="80" y="90" textAnchor="middle" fill="#66FFF0" fontSize="9" fontFamily="Arial" fontWeight="bold">← medir aqui →</text>
+                      <text x="80" y="104" textAnchor="middle" fill="#666" fontSize="8" fontFamily="Arial">na altura do umbigo</text>
+                      <text x="80" y="116" textAnchor="middle" fill="#666" fontSize="8" fontFamily="Arial">sem prender barriga</text>
+                    </svg>
+                  )
+                },
+                {
+                  key:"quadril", emoji:"🍑", titulo:"QUADRIL (só feminino)",
+                  desc:"Meça na parte mais larga do quadril / glúteos, mantendo os pés juntos. A fita deve ficar paralela ao chão.",
+                  svg:(
+                    <svg viewBox="0 0 160 140" width="100%" style={{maxWidth:160}}>
+                      <rect width="160" height="140" fill="#0A0A0A" rx="8"/>
+                      {/* quadril */}
+                      <path d="M55 20 Q35 40 32 70 Q34 95 60 100 Q80 105 100 100 Q126 95 128 70 Q125 40 105 20 Z" fill="#1a1a1a" stroke="#333" strokeWidth="1.5"/>
+                      {/* linha medição */}
+                      <line x1="28" y1="72" x2="132" y2="72" stroke="#66FFF0" strokeWidth="2" strokeDasharray="4,3"/>
+                      <circle cx="28" cy="72" r="3" fill="#66FFF0"/>
+                      <circle cx="132" cy="72" r="3" fill="#66FFF0"/>
+                      <text x="80" y="95" textAnchor="middle" fill="#66FFF0" fontSize="9" fontFamily="Arial" fontWeight="bold">← medir aqui →</text>
+                      <text x="80" y="110" textAnchor="middle" fill="#666" fontSize="8" fontFamily="Arial">parte mais larga</text>
+                      <text x="80" y="122" textAnchor="middle" fill="#666" fontSize="8" fontFamily="Arial">fita paralela ao chão</text>
+                    </svg>
+                  )
+                },
+                {
+                  key:"braco", emoji:"💪", titulo:"BRAÇO",
+                  desc:"Meça o bíceps relaxado na parte mais larga do braço, entre o ombro e o cotovelo. Braço estendido ao lado do corpo.",
+                  svg:(
+                    <svg viewBox="0 0 160 140" width="100%" style={{maxWidth:160}}>
+                      <rect width="160" height="140" fill="#0A0A0A" rx="8"/>
+                      {/* braço */}
+                      <path d="M70 15 Q60 20 58 50 Q56 80 60 110 Q70 118 80 118 Q90 118 100 110 Q104 80 102 50 Q100 20 90 15 Z" fill="#1a1a1a" stroke="#333" strokeWidth="1.5"/>
+                      {/* linha medição */}
+                      <line x1="44" y1="55" x2="116" y2="55" stroke="#66FFF0" strokeWidth="2" strokeDasharray="4,3"/>
+                      <circle cx="44" cy="55" r="3" fill="#66FFF0"/>
+                      <circle cx="116" cy="55" r="3" fill="#66FFF0"/>
+                      <text x="80" y="82" textAnchor="middle" fill="#66FFF0" fontSize="9" fontFamily="Arial" fontWeight="bold">← medir aqui →</text>
+                      <text x="80" y="96" textAnchor="middle" fill="#666" fontSize="8" fontFamily="Arial">parte mais larga</text>
+                      <text x="80" y="108" textAnchor="middle" fill="#666" fontSize="8" fontFamily="Arial">bíceps relaxado</text>
+                    </svg>
+                  )
+                },
+                {
+                  key:"coxa", emoji:"🦵", titulo:"COXA",
+                  desc:"Meça a parte mais larga da coxa, logo abaixo da dobra do glúteo. Peso distribuído em ambas as pernas.",
+                  svg:(
+                    <svg viewBox="0 0 160 140" width="100%" style={{maxWidth:160}}>
+                      <rect width="160" height="140" fill="#0A0A0A" rx="8"/>
+                      {/* coxa */}
+                      <path d="M55 15 Q42 25 40 60 Q40 95 55 115 Q68 125 80 125 Q92 125 105 115 Q120 95 120 60 Q118 25 105 15 Z" fill="#1a1a1a" stroke="#333" strokeWidth="1.5"/>
+                      {/* linha medição */}
+                      <line x1="32" y1="48" x2="128" y2="48" stroke="#66FFF0" strokeWidth="2" strokeDasharray="4,3"/>
+                      <circle cx="32" cy="48" r="3" fill="#66FFF0"/>
+                      <circle cx="128" cy="48" r="3" fill="#66FFF0"/>
+                      <text x="80" y="78" textAnchor="middle" fill="#66FFF0" fontSize="9" fontFamily="Arial" fontWeight="bold">← medir aqui →</text>
+                      <text x="80" y="92" textAnchor="middle" fill="#666" fontSize="8" fontFamily="Arial">parte mais larga</text>
+                      <text x="80" y="106" textAnchor="middle" fill="#666" fontSize="8" fontFamily="Arial">logo abaixo do glúteo</text>
+                    </svg>
+                  )
+                },
+              ].map(({key,emoji,titulo,desc,svg})=>(
+                <div key={key} style={{display:"flex",gap:16,padding:"16px 0",borderBottom:"1px solid #1a1a1a",alignItems:"flex-start"}}>
+                  <div style={{flexShrink:0,width:120}}>{svg}</div>
+                  <div style={{flex:1}}>
+                    <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:14,textTransform:"uppercase",letterSpacing:1,color:C.accent,marginBottom:6}}>{emoji} {titulo}</p>
+                    <p style={{fontSize:12,color:C.lgray,lineHeight:1.7}}>{desc}</p>
+                  </div>
+                </div>
+              ))}
+
+              <div style={{marginTop:16,padding:"14px",background:"rgba(102,255,240,.04)",border:"1px solid rgba(102,255,240,.1)",borderRadius:8}}>
+                <p style={{fontSize:11,color:C.muted,lineHeight:1.7}}>💡 <strong style={{color:C.accent}}>Dica:</strong> Meça sempre no mesmo horário (preferencialmente pela manhã em jejum) para comparações mais precisas. Use uma fita métrica flexível e não aperte demais.</p>
+              </div>
+
+              <button className="btn btn-accent" style={{width:"100%",marginTop:16}} onClick={()=>setShowGuia(false)}>
+                Entendido! ✓
+              </button>
+            </div>
+          </div>
+        )}
 
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:12}}>
           {campos.map(({key,label,emoji,obrig})=>(
