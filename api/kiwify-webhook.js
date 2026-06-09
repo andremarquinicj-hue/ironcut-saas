@@ -226,7 +226,7 @@ async function enviarEmail(para, nome) {
 
   return new Promise((resolve, reject) => {
     const body = JSON.stringify({
-      from: "IRONCUT 21D <onboarding@resend.dev>",
+      from: "IRONCUT 21D <noreply@appironcut.com>",
       to: [para],
       subject: "✅ Acesso liberado — Seu Protocolo IRONCUT 21D está pronto!",
       html,
