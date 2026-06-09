@@ -764,7 +764,10 @@ function Dashboard({ perfil, protocolo, pesosLog, onAddPeso, aguaLog, onToggleAg
         const fator=ATIVIDADE[perfil.nivelAtividade]||1.55;
         const tdeeVal=Math.round(tmbVal*fator);
         const metaKcal=protocolo?.kcal||(isMassa?tdeeVal+400:tdeeVal-500);
-        const deficitComTreino=isMassa?(metaKcal+calTreino)-tdeeVal:tdeeVal+calTreino-metaKcal;
+        // Cálculo correto: TMB + gasto real do relógio - meta da dieta
+        // Se não informou o relógio, usa TDEE como referência
+        const gastoTotal=calTreino>0?tmbVal+calTreino:tdeeVal;
+        const deficitComTreino=isMassa?metaKcal-gastoTotal:gastoTotal-metaKcal;
         const corDeficit=isMassa
           ?(deficitComTreino>=300?"#22c55e":deficitComTreino>=0?"#f59e0b":"#ff6b6b")
           :(deficitComTreino>=500?"#22c55e":deficitComTreino>=200?"#f59e0b":"#ff6b6b");
@@ -785,6 +788,7 @@ function Dashboard({ perfil, protocolo, pesosLog, onAddPeso, aguaLog, onToggleAg
             </div>
             <div style={{height:1,background:"rgba(255,255,255,.05)",marginBottom:16}}/>
             <p style={{fontSize:11,fontWeight:700,letterSpacing:2,textTransform:"uppercase",color:C.muted,marginBottom:8}}>⌚ Calorias queimadas no treino hoje</p>
+            <p style={{fontSize:11,color:"#444",marginBottom:8,lineHeight:1.5}}>Informe o gasto do seu relógio. O déficit será calculado como <strong style={{color:C.muted}}>TMB + Treino − Dieta</strong>. Sem relógio, usa o TDEE como base.</p>
             <div style={{display:"flex",gap:8,marginBottom:16}}>
               <input type="number" placeholder="Ex: 450 kcal (do seu relógio)" value={calTreino||""} onChange={e=>salvarCalTreino(e.target.value)} style={{flex:1,padding:"10px 14px",background:"#0D0D0D",border:"1px solid #222",borderRadius:7,color:"#fff",fontFamily:"'Barlow',sans-serif",fontSize:14,outline:"none"}} onFocus={e=>e.target.style.borderColor="#66FFF0"} onBlur={e=>e.target.style.borderColor="#222"}/>
               <button onClick={()=>salvarCalTreino(0)} style={{padding:"10px 16px",background:"transparent",border:"1px solid #333",borderRadius:7,color:C.muted,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:12,cursor:"pointer"}}>Limpar</button>
@@ -794,7 +798,10 @@ function Dashboard({ perfil, protocolo, pesosLog, onAddPeso, aguaLog, onToggleAg
                 <span style={{fontSize:11,fontWeight:700,letterSpacing:2,textTransform:"uppercase",color:C.muted}}>{isMassa?"Superávit":"Déficit"} do dia</span>
                 <span style={{fontSize:12,fontWeight:700,color:corDeficit}}>{labelDeficit}</span>
               </div>
-              {[{label:"TDEE",val:`${tdeeVal} kcal`,cor:C.muted},{label:"+ Treino",val:`${calTreino>0?"+"+calTreino:"0"} kcal`,cor:calTreino>0?"#22c55e":C.muted},{label:"− Meta dieta",val:`−${metaKcal} kcal`,cor:"#ff6b6b"}].map(({label,val,cor})=>(
+              {calTreino>0
+                ?[{label:"TMB",val:`${tmbVal} kcal`,cor:C.muted},{label:"+ Treino (relógio)",val:`+${calTreino} kcal`,cor:"#22c55e"},{label:"− Meta dieta",val:`−${metaKcal} kcal`,cor:"#ff6b6b"}]
+                :[{label:"TDEE (sem treino informado)",val:`${tdeeVal} kcal`,cor:C.muted},{label:"− Meta dieta",val:`−${metaKcal} kcal`,cor:"#ff6b6b"}]
+              }.map(({label,val,cor})=>(
                 <div key={label} style={{display:"flex",justifyContent:"space-between",fontSize:13,padding:"4px 0",borderBottom:"1px solid rgba(255,255,255,.04)"}}>
                   <span style={{color:C.muted}}>{label}</span>
                   <span style={{color:cor,fontWeight:600}}>{val}</span>
