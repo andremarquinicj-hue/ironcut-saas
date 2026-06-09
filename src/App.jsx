@@ -726,7 +726,74 @@ function Dashboard({ perfil, protocolo, pesosLog, onAddPeso, aguaLog, onToggleAg
         <div className="card dc"><div className="dc-label">IMC Atual</div><div className="dc-val" style={{fontSize:30}}>{imc}</div><div className="dc-sub">{clsIMC(parseFloat(imc))}</div></div>
       </div>
       <div className="card" style={{padding:"18px 20px",marginBottom:18}}><p style={{fontFamily:"'Barlow Condensed'",fontWeight:700,fontSize:15,textTransform:"uppercase",letterSpacing:1,marginBottom:4}}>Progresso na Meta</p><div className="prog-wrap"><div className="prog-fill" style={{width:`${progPct}%`}}/></div><div style={{display:"flex",justifyContent:"space-between",fontSize:12,color:C.muted}}><span>{perfil.peso}kg</span><span style={{color:C.accent,fontWeight:700}}>{progPct}% concluído</span><span>{ideal}kg</span></div></div>
-      <div className="card" style={{padding:"18px 20px",marginBottom:18}}><p style={{fontFamily:"'Barlow Condensed'",fontWeight:700,fontSize:15,textTransform:"uppercase",letterSpacing:1,marginBottom:12}}>Evolução do Peso</p>{pesosLog.length>=2?(<div className="chart-wrap"><svg width="100%" height="100%" viewBox={`0 0 ${cW} ${cH+20}`} preserveAspectRatio="none"><defs><linearGradient id="cg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={C.accent} stopOpacity=".25"/><stop offset="100%" stopColor={C.accent} stopOpacity="0"/></linearGradient></defs>{path&&<><path d={`${path} L${cW},${cH} L0,${cH} Z`} fill="url(#cg)"/><path d={path} fill="none" stroke={C.accent} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>{pesosLog.map((p,i)=>{const vals=pesosLog.map(x=>x.val);const mn=Math.min(...vals)-.5,mx=Math.max(...vals)+.5;const x=(i/(vals.length-1||1))*cW;const y=cH-((p.val-mn)/(mx-mn||1))*cH;return(<g key={i}><circle cx={x} cy={y} r="5" fill={C.accent} style={{filter:`drop-shadow(0 0 4px ${C.accent})`}}/><text x={x} y={cH+14} textAnchor="middle" fill={C.muted} fontSize="9" fontFamily="Barlow">{p.data.split("/").slice(0,2).join("/")}</text></g>);})}</>}</svg></div>):(<p style={{color:C.muted,fontSize:13,textAlign:"center",padding:"20px 0"}}>Registre seu peso diariamente para ver a evolução aqui.</p>)}<div className="weight-form"><input type="number" placeholder="Registrar peso de hoje (kg)" value={newP} onChange={e=>setNewP(e.target.value)}/><button onClick={()=>{if(newP){onAddPeso(parseFloat(newP));setNewP("");}}}> + Registrar</button></div></div>
+      
+      {/* ── CALENDÁRIO SEMANAL VISUAL ── */}
+      {(()=>{
+        const dias7=[];
+        for(let i=6;i>=0;i--){
+          const d=new Date();d.setDate(d.getDate()-i);
+          const str=`${String(d.getDate()).padStart(2,"0")}/${String(d.getMonth()+1).padStart(2,"0")}/${d.getFullYear()}`;
+          const nomes=["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"];
+          const chk=checkLog[str]||{};
+          const agua=aguaLog[str]||0;
+          const garrafas=Math.ceil(aguaDia(perfil.peso)/0.5);
+          const treinou=!!chk.treino;
+          const dietou=!!chk.dieta;
+          const hidratou=agua>=garrafas;
+          const isHoje=str===hoje();
+          const total=(treinou?1:0)+(dietou?1:0)+(hidratou?1:0);
+          dias7.push({str,dia:nomes[d.getDay()],num:d.getDate(),treinou,dietou,hidratou,isHoje,total});
+        }
+        return(
+          <div className="card" style={{padding:"18px 20px",marginBottom:18}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
+              <p style={{fontFamily:"'Barlow Condensed'",fontWeight:700,fontSize:15,textTransform:"uppercase",letterSpacing:1}}>📅 Semana em Revista</p>
+              <div style={{display:"flex",gap:10,fontSize:11,color:C.muted}}>
+                <span>🏋️ Treino</span>
+                <span>🥩 Dieta</span>
+                <span>💧 Água</span>
+              </div>
+            </div>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:6}}>
+              {dias7.map(({str,dia,num,treinou,dietou,hidratou,isHoje,total})=>{
+                const cor=total===3?"#22c55e":total===2?C.accent:total===1?"#f59e0b":"#333";
+                const bg=total===3?"rgba(34,197,94,.08)":total===2?"rgba(102,255,240,.06)":total===1?"rgba(245,158,11,.06)":"transparent";
+                return(
+                  <div key={str} style={{
+                    display:"flex",flexDirection:"column",alignItems:"center",gap:4,
+                    padding:"10px 4px",borderRadius:8,
+                    border:`1px solid ${isHoje?cor:"#1a1a1a"}`,
+                    background:isHoje?bg:"transparent",
+                    transition:"all .2s"
+                  }}>
+                    <span style={{fontSize:9,fontWeight:700,letterSpacing:1,textTransform:"uppercase",color:isHoje?C.accent:C.muted}}>{dia}</span>
+                    <span style={{fontFamily:"'Bebas Neue',cursive",fontSize:18,color:isHoje?C.text:"#444",lineHeight:1}}>{num}</span>
+                    <div style={{display:"flex",flexDirection:"column",gap:2,width:"100%",alignItems:"center"}}>
+                      <div style={{width:20,height:4,borderRadius:2,background:treinou?"#22c55e":"#1a1a1a"}}/>
+                      <div style={{width:20,height:4,borderRadius:2,background:dietou?C.accent:"#1a1a1a"}}/>
+                      <div style={{width:20,height:4,borderRadius:2,background:hidratou?"#60a5fa":"#1a1a1a"}}/>
+                    </div>
+                    {total===3&&<span style={{fontSize:10}}>⭐</span>}
+                  </div>
+                );
+              })}
+            </div>
+            <div style={{display:"flex",gap:16,marginTop:12,flexWrap:"wrap"}}>
+              {[{cor:"#22c55e",label:"Verde = dia perfeito (3/3)"},
+                {cor:C.accent,label:"Ciano = 2/3"},
+                {cor:"#f59e0b",label:"Amarelo = 1/3"},
+                {cor:"#333",label:"Cinza = sem registro"},
+              ].map(({cor,label})=>(
+                <div key={label} style={{display:"flex",alignItems:"center",gap:6,fontSize:10,color:C.muted}}>
+                  <div style={{width:8,height:8,borderRadius:"50%",background:cor,flexShrink:0}}/>
+                  {label}
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
+<div className="card" style={{padding:"18px 20px",marginBottom:18}}><p style={{fontFamily:"'Barlow Condensed'",fontWeight:700,fontSize:15,textTransform:"uppercase",letterSpacing:1,marginBottom:12}}>Evolução do Peso</p>{pesosLog.length>=2?(<div className="chart-wrap"><svg width="100%" height="100%" viewBox={`0 0 ${cW} ${cH+20}`} preserveAspectRatio="none"><defs><linearGradient id="cg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={C.accent} stopOpacity=".25"/><stop offset="100%" stopColor={C.accent} stopOpacity="0"/></linearGradient></defs>{path&&<><path d={`${path} L${cW},${cH} L0,${cH} Z`} fill="url(#cg)"/><path d={path} fill="none" stroke={C.accent} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>{pesosLog.map((p,i)=>{const vals=pesosLog.map(x=>x.val);const mn=Math.min(...vals)-.5,mx=Math.max(...vals)+.5;const x=(i/(vals.length-1||1))*cW;const y=cH-((p.val-mn)/(mx-mn||1))*cH;return(<g key={i}><circle cx={x} cy={y} r="5" fill={C.accent} style={{filter:`drop-shadow(0 0 4px ${C.accent})`}}/><text x={x} y={cH+14} textAnchor="middle" fill={C.muted} fontSize="9" fontFamily="Barlow">{p.data.split("/").slice(0,2).join("/")}</text></g>);})}</>}</svg></div>):(<p style={{color:C.muted,fontSize:13,textAlign:"center",padding:"20px 0"}}>Registre seu peso diariamente para ver a evolução aqui.</p>)}<div className="weight-form"><input type="number" placeholder="Registrar peso de hoje (kg)" value={newP} onChange={e=>setNewP(e.target.value)}/><button onClick={()=>{if(newP){onAddPeso(parseFloat(newP));setNewP("");}}}> + Registrar</button></div></div>
       {(()=>{
         const score=calcScore(),streak=calcStreak(),dHoje=hoje(),checkHoje=checkLog[dHoje]||{treino:false,dieta:false};
         const nivel=score>=91?"🏆 Elite IRONCUT":score>=71?"⚡ Consistente":score>=41?"📈 Em Progresso":"🌱 Iniciante";
@@ -1258,9 +1325,7 @@ export default function App() {
   const [showLogin,setLogin]   = useState(false);
   // ✅ NOVO: estado de bloqueio
   const [bloqueado, setBloqueado] = useState(false);
-  const [checkLog, setCheckLog] = useState(()=>{
-    try{ return JSON.parse(localStorage.getItem(`ic_check_${perfil?.email}`)||"{}"); }catch{return {};}
-  });
+  const [checkLog, setCheckLog] = useState({});
 
   // Restore session on mount
   useEffect(()=>{
@@ -1274,6 +1339,8 @@ export default function App() {
           setPerfil(conta.perfil);
           setProto(conta.protocolo);
           setPesos(conta.pesosLog||[]);
+          const savedCheck1 = JSON.parse(localStorage.getItem(`ic_check_${conta.perfil.email}`) || "{}");
+          setCheckLog(savedCheck1);
           setAguaLog(conta.aguaLog||{});
           setBloqueado(!liberado);
           setTela("app");
@@ -1282,6 +1349,8 @@ export default function App() {
           if(c[sess.email]&&c[sess.email].senha===sess.senha){
             const liberado = await verificarComprador(sess.email).catch(()=>true);
             setPerfil(c[sess.email].perfil);
+            const savedCheck2 = JSON.parse(localStorage.getItem(`ic_check_${c[sess.email].perfil.email}`) || "{}");
+            setCheckLog(savedCheck2);
             setProto(c[sess.email].protocolo);
             setPesos(c[sess.email].pesosLog||[]);
             setAguaLog(c[sess.email].aguaLog||{});
