@@ -731,7 +731,23 @@ function Dashboard({ perfil, protocolo, pesosLog, onAddPeso, aguaLog, onToggleAg
       <p style={{fontFamily:"'Bebas Neue'",fontSize:30,letterSpacing:1,marginBottom:18}}>OLÁ, {perfil.nome.split(" ")[0].toUpperCase()}!{" "}<span className={`badge ${isMassa?"badge-mass":"badge-fat"}`}>{isMassa?"💪 MASSA":"🔥 FAT LOSS"}</span></p>
       <div className="dash-grid" style={{marginBottom:18}}>
         <div className="card-accent dc"><div className="dc-label">Peso Atual</div><div className="dc-val">{pesoAtual}kg</div><div className="dc-sub">Meta: {ideal}kg</div></div>
-        <div className="card dc"><div className="dc-label">{isMassa?"Ganho":"Perdido"}</div><div className="dc-val" style={{color:parseFloat(perdido)>=0?(isMassa?C.purple:C.accent):C.green,fontSize:32}}>{isMassa?"+":""}{Math.abs(parseFloat(perdido)).toFixed(1)}kg</div><div className="dc-sub">Desde o início</div></div>
+        <div className="card dc">
+          <div className="dc-label">
+            {isMassa
+              ? (parseFloat(perdido)>=0?"Ganho":"Perdido")
+              : (parseFloat(perdido)>=0?"Perdido":"Ganhou")
+            }
+          </div>
+          <div className="dc-val" style={{
+            color: isMassa
+              ? (parseFloat(perdido)>=0?C.purple:"#ff6b6b")
+              : (parseFloat(perdido)>=0?C.accent:"#ff6b6b"),
+            fontSize:32
+          }}>
+            {parseFloat(perdido)<0?"+":""}{Math.abs(parseFloat(perdido)).toFixed(1)}kg
+          </div>
+          <div className="dc-sub">Desde o início</div>
+        </div>
         <div className="card dc"><div className="dc-label">Falta</div><div className="dc-val" style={{fontSize:32}}>{falta}kg</div><div className="dc-sub">Para o peso ideal</div></div>
         <div className="card dc"><div className="dc-label">IMC Atual</div><div className="dc-val" style={{fontSize:30}}>{imc}</div><div className="dc-sub">{clsIMC(parseFloat(imc))}</div></div>
       </div>
