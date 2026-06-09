@@ -677,6 +677,9 @@ function Cadastro({ onCadastro }) {
 // ─── DASHBOARD ────────────────────────────────────────────────────────────────
 function Dashboard({ perfil, protocolo, pesosLog, onAddPeso, aguaLog, onToggleAgua, checkLog, toggleCheck, calcScore, calcStreak }) {
   const [newP,setNewP]=useState("");
+  const CAL_KEY=`ic_cal_${perfil.email}_${hoje()}`;
+  const [calTreino,setCalTreino]=useState(()=>{try{return parseInt(localStorage.getItem(`ic_cal_${perfil.email}_${hoje()}`)||"0");}catch{return 0;}});
+  function salvarCalTreino(v){const n=parseInt(v)||0;setCalTreino(n);localStorage.setItem(`ic_cal_${perfil.email}_${hoje()}`,String(n));}
   const motiv=getDayMotiv();
   const pesoAtual=pesosLog.length?pesosLog[pesosLog.length-1].val:parseFloat(perfil.peso);
   const ideal=parseFloat(pesoIdeal(perfil.altura,perfil.sexo));
@@ -755,6 +758,56 @@ function Dashboard({ perfil, protocolo, pesosLog, onAddPeso, aguaLog, onToggleAg
       <div className="card" style={{padding:"18px 20px",marginBottom:18}}><p style={{fontFamily:"'Barlow Condensed'",fontWeight:700,fontSize:15,textTransform:"uppercase",letterSpacing:1,marginBottom:12}}>Evolução do Peso</p>{pesosLog.length>=2?(<div className="chart-wrap"><svg width="100%" height="100%" viewBox={`0 0 ${cW} ${cH+20}`} preserveAspectRatio="none"><defs><linearGradient id="cg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={C.accent} stopOpacity=".25"/><stop offset="100%" stopColor={C.accent} stopOpacity="0"/></linearGradient></defs>{path&&<><path d={`${path} L${cW},${cH} L0,${cH} Z`} fill="url(#cg)"/><path d={path} fill="none" stroke={C.accent} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>{pesosLog.map((p,i)=>{const vals=pesosLog.map(x=>x.val);const mn=Math.min(...vals)-.5,mx=Math.max(...vals)+.5;const x=(i/(vals.length-1||1))*cW;const y=cH-((p.val-mn)/(mx-mn||1))*cH;return(<g key={i}><circle cx={x} cy={y} r="5" fill={C.accent} style={{filter:`drop-shadow(0 0 4px ${C.accent})`}}/><text x={x} y={cH+14} textAnchor="middle" fill={C.muted} fontSize="9" fontFamily="Barlow">{p.data.split("/").slice(0,2).join("/")}</text></g>);})}</>}</svg></div>):(<p style={{color:C.muted,fontSize:13,textAlign:"center",padding:"20px 0"}}>Registre seu peso diariamente para ver a evolução aqui.</p>)}<div className="weight-form"><input type="number" placeholder="Registrar peso de hoje (kg)" value={newP} onChange={e=>setNewP(e.target.value)}/><button onClick={()=>{if(newP){onAddPeso(parseFloat(newP));setNewP("");}}}> + Registrar</button></div></div>
       <div className="card-accent water-section"><div className="water-header"><div><p className="water-title">💧 Hidratação Diária</p><p className="water-meta">Meta: {litrosNecessarios}L por dia ({garrafas} garrafas de 500ml)</p></div><div style={{textAlign:"right"}}><div className="water-total">{litrosHoje}L / {litrosNecessarios}L</div><div style={{fontSize:11,color:C.muted}}>{aguaPct}% da meta</div></div></div><div className="water-bar-bg"><div className="water-bar-fill" style={{width:`${aguaPct}%`}}/></div><div className="water-bottles">{Array.from({length:garrafas},(_,i)=>(<div key={i} className="bottle" onClick={()=>onToggleAgua(i+1)}><div className={`bottle-icon${aguaHoje>i?" full":""}`}>💧</div><div className="bottle-label">{(i+1)*500}ml</div></div>))}</div>{aguaHoje>=garrafas&&(<p style={{textAlign:"center",marginTop:10,fontSize:13,color:C.accent,fontWeight:700}}>✅ Meta de hidratação atingida hoje!</p>)}</div>
       {protocolo?.kcal&&(<div className="card" style={{padding:"18px 20px",marginTop:18}}><p style={{fontFamily:"'Barlow Condensed'",fontWeight:700,fontSize:15,textTransform:"uppercase",letterSpacing:1,marginBottom:12}}>Distribuição de Macros</p><div className="macro-grid"><div className="card macro-card"><div className="macro-val">{protocolo.kcal}</div><div className="macro-label">kcal/dia</div></div><div className="card macro-card"><div className="macro-val">{protocolo.prot}g</div><div className="macro-label">Proteína</div></div><div className="card macro-card"><div className="macro-val">{protocolo.carb}g</div><div className="macro-label">Carboidrato</div></div></div>{protocolo.dica&&(<div style={{background:"rgba(102,255,240,.05)",border:`1px solid rgba(102,255,240,.15)`,borderRadius:8,padding:"12px 16px",fontSize:13,color:C.lgray}}>💡 <strong style={{color:C.accent}}>Dica IA:</strong> {protocolo.dica}</div>)}</div>)}
+
+      {(()=>{
+        const tmbVal=tmb(perfil.peso,perfil.altura,perfil.idade,perfil.sexo);
+        const fator=ATIVIDADE[perfil.nivelAtividade]||1.55;
+        const tdeeVal=Math.round(tmbVal*fator);
+        const metaKcal=protocolo?.kcal||(isMassa?tdeeVal+400:tdeeVal-500);
+        const deficitComTreino=isMassa?(metaKcal+calTreino)-tdeeVal:tdeeVal+calTreino-metaKcal;
+        const corDeficit=isMassa
+          ?(deficitComTreino>=300?"#22c55e":deficitComTreino>=0?"#f59e0b":"#ff6b6b")
+          :(deficitComTreino>=500?"#22c55e":deficitComTreino>=200?"#f59e0b":"#ff6b6b");
+        const labelDeficit=isMassa
+          ?(deficitComTreino>=300?"🔥 Superávit ideal!":deficitComTreino>=0?"⚠️ Superávit baixo":"❌ Déficit — coma mais")
+          :(deficitComTreino>=500?"🔥 Déficit ideal!":deficitComTreino>=200?"⚠️ Déficit moderado":"❌ Déficit insuficiente");
+        return (
+          <div className="card" style={{padding:"20px 22px",marginTop:18,border:"1px solid rgba(102,255,240,.15)"}}>
+            <p style={{fontFamily:"'Barlow Condensed'",fontWeight:700,fontSize:15,textTransform:"uppercase",letterSpacing:1,marginBottom:16}}>⚡ Taxa Metabólica & Déficit</p>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10,marginBottom:16}}>
+              {[{label:"TMB",val:tmbVal,sub:"Em repouso"},{label:"TDEE",val:tdeeVal,sub:"Gasto c/ atividade"},{label:"Meta",val:metaKcal,sub:isMassa?"Superávit":"Déficit"}].map(({label,val,sub})=>(
+                <div key={label} style={{background:"#0D0D0D",border:"1px solid #1a1a1a",borderRadius:8,padding:"12px",textAlign:"center"}}>
+                  <div style={{fontSize:9,fontWeight:700,letterSpacing:2,textTransform:"uppercase",color:C.muted,marginBottom:4}}>{label}</div>
+                  <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:24,color:C.accent,lineHeight:1}}>{val}</div>
+                  <div style={{fontSize:10,color:C.muted,marginTop:3}}>{sub}</div>
+                </div>
+              ))}
+            </div>
+            <div style={{height:1,background:"rgba(255,255,255,.05)",marginBottom:16}}/>
+            <p style={{fontSize:11,fontWeight:700,letterSpacing:2,textTransform:"uppercase",color:C.muted,marginBottom:8}}>⌚ Calorias queimadas no treino hoje</p>
+            <div style={{display:"flex",gap:8,marginBottom:16}}>
+              <input type="number" placeholder="Ex: 450 kcal (do seu relógio)" value={calTreino||""} onChange={e=>salvarCalTreino(e.target.value)} style={{flex:1,padding:"10px 14px",background:"#0D0D0D",border:"1px solid #222",borderRadius:7,color:"#fff",fontFamily:"'Barlow',sans-serif",fontSize:14,outline:"none"}} onFocus={e=>e.target.style.borderColor="#66FFF0"} onBlur={e=>e.target.style.borderColor="#222"}/>
+              <button onClick={()=>salvarCalTreino(0)} style={{padding:"10px 16px",background:"transparent",border:"1px solid #333",borderRadius:7,color:C.muted,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:12,cursor:"pointer"}}>Limpar</button>
+            </div>
+            <div style={{background:"rgba(0,0,0,.3)",border:`1px solid ${corDeficit}40`,borderRadius:10,padding:"14px 16px"}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+                <span style={{fontSize:11,fontWeight:700,letterSpacing:2,textTransform:"uppercase",color:C.muted}}>{isMassa?"Superávit":"Déficit"} do dia</span>
+                <span style={{fontSize:12,fontWeight:700,color:corDeficit}}>{labelDeficit}</span>
+              </div>
+              {[{label:"TDEE",val:`${tdeeVal} kcal`,cor:C.muted},{label:"+ Treino",val:`${calTreino>0?"+"+calTreino:"0"} kcal`,cor:calTreino>0?"#22c55e":C.muted},{label:"− Meta dieta",val:`−${metaKcal} kcal`,cor:"#ff6b6b"}].map(({label,val,cor})=>(
+                <div key={label} style={{display:"flex",justifyContent:"space-between",fontSize:13,padding:"4px 0",borderBottom:"1px solid rgba(255,255,255,.04)"}}>
+                  <span style={{color:C.muted}}>{label}</span>
+                  <span style={{color:cor,fontWeight:600}}>{val}</span>
+                </div>
+              ))}
+              <div style={{display:"flex",justifyContent:"space-between",fontSize:15,fontWeight:700,marginTop:10,paddingTop:10,borderTop:"1px solid rgba(255,255,255,.08)"}}>
+                <span style={{color:C.text}}>{isMassa?"= Superávit real":"= Déficit real"}</span>
+                <span style={{color:corDeficit,fontFamily:"'Bebas Neue',cursive",fontSize:22}}>{deficitComTreino>0?"+":""}{deficitComTreino} kcal</span>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }
@@ -1195,7 +1248,9 @@ export default function App() {
   const [showLogin,setLogin]   = useState(false);
   // ✅ NOVO: estado de bloqueio
   const [bloqueado, setBloqueado] = useState(false);
-const [checkLog, setCheckLog] = useState({});
+  const [checkLog, setCheckLog] = useState(()=>{
+    try{ return JSON.parse(localStorage.getItem(`ic_check_${perfil?.email}`)||"{}"); }catch{return {};}
+  });
 
   // Restore session on mount
   useEffect(()=>{
@@ -1209,8 +1264,6 @@ const [checkLog, setCheckLog] = useState({});
           setPerfil(conta.perfil);
           setProto(conta.protocolo);
           setPesos(conta.pesosLog||[]);
-          const savedCheck = JSON.parse(localStorage.getItem(`ic_check_${conta.perfil.email}`) || "{}");
-setCheckLog(savedCheck);
           setAguaLog(conta.aguaLog||{});
           setBloqueado(!liberado);
           setTela("app");
@@ -1219,8 +1272,6 @@ setCheckLog(savedCheck);
           if(c[sess.email]&&c[sess.email].senha===sess.senha){
             const liberado = await verificarComprador(sess.email).catch(()=>true);
             setPerfil(c[sess.email].perfil);
-            const savedCheck = JSON.parse(localStorage.getItem(`ic_check_${c[sess.email].perfil.email}`) || "{}");
-setCheckLog(savedCheck);
             setProto(c[sess.email].protocolo);
             setPesos(c[sess.email].pesosLog||[]);
             setAguaLog(c[sess.email].aguaLog||{});
