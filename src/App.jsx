@@ -1435,9 +1435,9 @@ function Treinos({ protocolo, perfil, onUpdateProtocolo }) {
                   ▶ Iniciar Treino
                 </button>
               </div>
-              <div style={{width:110,height:110,flexShrink:0,position:"relative",overflow:"hidden"}}>
+              <div style={{width:110,height:110,flexShrink:0,position:"relative",overflow:"hidden",background:"transparent"}}>
                 <div style={{position:"absolute",inset:0,background:"linear-gradient(90deg,#0A0A0A 0%,transparent 45%)",zIndex:1}}/>
-                <img src={getImagemMusculo(info.nome)} alt={info.nome} style={{width:"100%",height:"100%",objectFit:"cover",objectPosition:"center top",display:"block"}}/>
+                <img src={getImagemMusculo(info.nome)} alt={info.nome} style={{width:"100%",height:"100%",objectFit:"contain",objectPosition:"center",display:"block"}}/>
               </div>
             </div>
           </div>
