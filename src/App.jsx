@@ -772,11 +772,385 @@ function Dashboard({ perfil, protocolo, pesosLog, onAddPeso, aguaLog, onToggleAg
           </div>
         );
       })()}
+
+      {/* ── RELATÓRIO SEMANAL IA ── */}
+      {(()=>{
+        const RELATORIO_KEY = `ic_relatorio_${perfil.email}`;
+        const [relatorio, setRelatorio] = useState(()=>{try{return JSON.parse(localStorage.getItem(RELATORIO_KEY)||"null");}catch{return null;}});
+        const [gerandoRel, setGerandoRel] = useState(false);
+
+        // Coleta dados dos últimos 7 dias
+        function coletarDadosSemana() {
+          const dias7 = [];
+          for(let i=6;i>=0;i--){
+            const d=new Date(); d.setDate(d.getDate()-i);
+            const str=`${String(d.getDate()).padStart(2,"0")}/${String(d.getMonth()+1).padStart(2,"0")}/${d.getFullYear()}`;
+            const chk=checkLog[str]||{};
+            const agua=aguaLog[str]||0;
+            const garrafas=Math.ceil(aguaDia(perfil.peso)/0.5);
+            dias7.push({ data:str, treinou:!!chk.treino, dieta:!!chk.dieta, agua, metaAgua:garrafas });
+          }
+          const treinos7 = dias7.filter(d=>d.treinou).length;
+          const dieta7   = dias7.filter(d=>d.dieta).length;
+          const agua7    = dias7.filter(d=>d.agua>=d.metaAgua).length;
+          const pesoAtual = pesosLog.length?pesosLog[pesosLog.length-1].val:parseFloat(perfil.peso);
+          const pesoSemAntras = pesosLog.length>=2?pesosLog[Math.max(0,pesosLog.length-8)].val:parseFloat(perfil.peso);
+          const varPeso = (pesoAtual - pesoSemAntras).toFixed(1);
+          return { dias7, treinos7, dieta7, agua7, pesoAtual, pesoSemAntras, varPeso, score:calcScore(), streak:calcStreak() };
+        }
+
+        async function gerarRelatorio() {
+          setGerandoRel(true);
+          const dados = coletarDadosSemana();
+          const prompt = `Você é o coach de elite do app IRONCUT 21D. Gere um relatório semanal motivador e profissional em JSON.
+
+Dados do aluno ${perfil.nome.split(" ")[0]} (${perfil.sexo}, ${perfil.idade} anos, objetivo: ${perfil.objetivo==="massa"?"ganho de massa":"emagrecimento"}):
+- Treinos realizados: ${dados.treinos7}/7 dias
+- Dias seguindo a dieta: ${dados.dieta7}/7 dias  
+- Dias com meta de hidratação: ${dados.agua7}/7 dias
+- Variação de peso na semana: ${dados.varPeso}kg
+- Score atual: ${dados.score}/100
+- Sequência atual: ${dados.streak} dias
+- Meta calórica: ${protocolo?.kcal||0} kcal/dia
+- Proteína diária: ${protocolo?.prot||0}g
+
+Retorne SOMENTE JSON válido sem markdown:
+{
+  "titulo": "título impactante da semana (ex: SEMANA DE FOGO 🔥)",
+  "nota": número de 0 a 10,
+  "resumo": "parágrafo curto e direto sobre a semana (2-3 frases)",
+  "destaques": ["ponto positivo 1", "ponto positivo 2", "ponto positivo 3"],
+  "melhorar": ["ponto a melhorar 1", "ponto a melhorar 2"],
+  "desafio": "desafio específico para a próxima semana (1 frase motivadora)",
+  "mensagem": "mensagem final personalizada e motivadora (2 frases)"
+}`;
+
+          try {
+            const res = await fetch("/api/chat", {
+              method:"POST", headers:{"Content-Type":"application/json"},
+              body: JSON.stringify({ model:"claude-sonnet-4-20250514", max_tokens:800,
+                messages:[{ role:"user", content:prompt }]
+              })
+            });
+            const d = await res.json();
+            const txt = d?.content?.[0]?.text||"";
+            const json = JSON.parse(txt.replace(/```json|```/g,"").trim());
+            const novoRel = { ...json, dados, geradoEm: new Date().toLocaleDateString("pt-BR",{day:"2-digit",month:"2-digit",year:"numeric"}), geradoHora: new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"}) };
+            setRelatorio(novoRel);
+            localStorage.setItem(RELATORIO_KEY, JSON.stringify(novoRel));
+          } catch { alert("Erro ao gerar relatório. Tente novamente."); }
+          setGerandoRel(false);
+        }
+
+        function exportarRelatorio() {
+          if(!relatorio) return;
+          const dados = relatorio.dados;
+          const notaCor = relatorio.nota>=8?"#22c55e":relatorio.nota>=6?"#66FFF0":relatorio.nota>=4?"#f59e0b":"#ff6b6b";
+          const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Relatório IRONCUT — ${perfil.nome}</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@400;700;900&family=Barlow:wght@400;500;600&display=swap');
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#0A0A0A;color:#fff;font-family:'Barlow',sans-serif;padding:0;min-height:100vh}
+  .page{max-width:700px;margin:0 auto;padding:40px 32px}
+  
+  /* HEADER */
+  .header{display:flex;justify-content:space-between;align-items:center;padding-bottom:24px;border-bottom:1px solid #202020;margin-bottom:32px}
+  .logo-area{display:flex;align-items:center;gap:14px}
+  .logo-img{width:56px;height:56px;object-fit:contain}
+  .logo-text{font-family:'Bebas Neue',cursive;font-size:28px;letter-spacing:6px;color:#fff}
+  .logo-text span{color:#66FFF0}
+  .logo-sub{font-size:10px;letter-spacing:3px;text-transform:uppercase;color:#555;margin-top:2px}
+  .header-right{text-align:right}
+  .header-badge{display:inline-block;background:rgba(102,255,240,.1);border:1px solid rgba(102,255,240,.25);color:#66FFF0;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:11px;letter-spacing:2px;text-transform:uppercase;padding:5px 14px;border-radius:4px;margin-bottom:6px}
+  .header-data{font-size:11px;color:#555;letter-spacing:1px}
+
+  /* HERO */
+  .hero{background:linear-gradient(135deg,#0F0F0F 0%,#141414 100%);border:1px solid #202020;border-radius:16px;padding:32px;margin-bottom:24px;position:relative;overflow:hidden}
+  .hero::before{content:'';position:absolute;top:0;right:0;width:200px;height:200px;background:radial-gradient(circle,rgba(102,255,240,.08) 0%,transparent 70%);pointer-events:none}
+  .hero-label{font-size:10px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#66FFF0;margin-bottom:8px}
+  .hero-titulo{font-family:'Bebas Neue',cursive;font-size:42px;letter-spacing:2px;line-height:1;margin-bottom:16px;color:#fff}
+  .hero-aluno{display:flex;align-items:center;gap:12px;margin-bottom:20px}
+  .hero-aluno-nome{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:16px;text-transform:uppercase;letter-spacing:1px}
+  .hero-aluno-info{font-size:12px;color:#666;margin-top:2px}
+  .hero-nota-wrap{display:flex;align-items:center;gap:16px}
+  .hero-nota{font-family:'Bebas Neue',cursive;font-size:72px;line-height:1;color:${notaCor};text-shadow:0 0 30px ${notaCor}40}
+  .hero-nota-label{font-size:11px;color:#555;letter-spacing:2px;text-transform:uppercase;margin-top:4px}
+  .hero-resumo{font-size:14px;color:#BBBBBB;line-height:1.8;margin-top:16px;padding-top:16px;border-top:1px solid #1a1a1a}
+
+  /* STATS */
+  .stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px}
+  .stat{background:#0F0F0F;border:1px solid #1a1a1a;border-radius:10px;padding:16px;text-align:center}
+  .stat-val{font-family:'Bebas Neue',cursive;font-size:32px;line-height:1;margin-bottom:4px}
+  .stat-label{font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#555}
+  .stat-sub{font-size:10px;color:#444;margin-top:3px}
+
+  /* SEMANA VISUAL */
+  .semana-card{background:#0F0F0F;border:1px solid #1a1a1a;border-radius:12px;padding:20px 24px;margin-bottom:24px}
+  .card-title{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:2px;color:#888;margin-bottom:14px}
+  .semana-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:8px}
+  .dia-box{text-align:center;padding:10px 4px;border-radius:8px;border:1px solid #1a1a1a}
+  .dia-nome{font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#555;margin-bottom:6px}
+  .dia-num{font-family:'Bebas Neue',cursive;font-size:20px;color:#fff;line-height:1;margin-bottom:6px}
+  .dia-bars{display:flex;flex-direction:column;gap:3px;align-items:center}
+  .dia-bar{width:20px;height:4px;border-radius:2px}
+
+  /* DESTAQUES / MELHORAR */
+  .two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px}
+  .info-card{background:#0F0F0F;border-radius:12px;padding:20px;border:1px solid #1a1a1a}
+  .info-card.green{border-color:rgba(34,197,94,.2);background:rgba(34,197,94,.04)}
+  .info-card.yellow{border-color:rgba(245,158,11,.2);background:rgba(245,158,11,.04)}
+  .info-item{display:flex;gap:10px;font-size:13px;color:#BBBBBB;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.04);line-height:1.5}
+  .info-item:last-child{border-bottom:none}
+  .info-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;margin-top:5px}
+
+  /* DESAFIO */
+  .desafio-card{background:linear-gradient(135deg,rgba(102,255,240,.08),rgba(102,255,240,.02));border:1px solid rgba(102,255,240,.2);border-radius:12px;padding:24px;margin-bottom:24px;text-align:center}
+  .desafio-label{font-size:10px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#66FFF0;margin-bottom:8px}
+  .desafio-texto{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:20px;color:#fff;line-height:1.4}
+
+  /* MENSAGEM FINAL */
+  .mensagem-card{background:#0F0F0F;border:1px solid #202020;border-radius:12px;padding:24px;margin-bottom:32px;text-align:center}
+  .mensagem-texto{font-size:15px;color:#BBBBBB;line-height:1.8;font-style:italic}
+
+  /* FOOTER */
+  .footer{display:flex;justify-content:space-between;align-items:center;padding-top:20px;border-top:1px solid #1a1a1a}
+  .footer-logo{font-family:'Bebas Neue',cursive;font-size:16px;letter-spacing:4px;color:#333}
+  .footer-logo span{color:#66FFF0}
+  .footer-text{font-size:10px;color:#333;letter-spacing:1px}
+
+  @media print{body{background:#0A0A0A!important}*{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}}
+</style></head><body><div class="page">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="logo-area">
+      <div style="width:56px;height:56px;background:linear-gradient(135deg,#00D4C8,#66FFF0);border-radius:12px;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',cursive;font-size:22px;color:#000;letter-spacing:2px;flex-shrink:0">IC</div>
+      <div>
+        <div class="logo-text"><span>IRON</span>CUT</div>
+        <div class="logo-sub">Protocolo de Transformação Corporal</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="header-badge">📊 Relatório Semanal</div>
+      <div class="header-data">Gerado em ${relatorio.geradoEm} às ${relatorio.geradoHora}</div>
+    </div>
+  </div>
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-label">Avaliação da Semana</div>
+    <div class="hero-titulo">${relatorio.titulo}</div>
+    <div class="hero-aluno">
+      <div>
+        <div class="hero-aluno-nome">${perfil.nome}</div>
+        <div class="hero-aluno-info">${perfil.sexo.charAt(0).toUpperCase()+perfil.sexo.slice(1)} • ${perfil.idade} anos • ${perfil.objetivo==="massa"?"Ganho de Massa":"Emagrecimento"}</div>
+      </div>
+    </div>
+    <div class="hero-nota-wrap">
+      <div>
+        <div class="hero-nota">${relatorio.nota}</div>
+        <div class="hero-nota-label">/ 10 pontos</div>
+      </div>
+      <div style="flex:1;height:8px;background:#1a1a1a;border-radius:4px;overflow:hidden;margin-left:8px">
+        <div style="height:100%;width:${relatorio.nota*10}%;background:linear-gradient(90deg,${notaCor},${notaCor}cc);border-radius:4px"></div>
+      </div>
+    </div>
+    <div class="hero-resumo">${relatorio.resumo}</div>
+  </div>
+
+  <!-- STATS -->
+  <div class="stats-grid">
+    ${[
+      {label:"Treinos",val:`${dados.treinos7}/7`,sub:"dias treinados",cor:dados.treinos7>=5?"#22c55e":dados.treinos7>=3?"#f59e0b":"#ff6b6b"},
+      {label:"Dieta",val:`${dados.dieta7}/7`,sub:"dias no plano",cor:dados.dieta7>=5?"#22c55e":dados.dieta7>=3?"#f59e0b":"#ff6b6b"},
+      {label:"Hidratação",val:`${dados.agua7}/7`,sub:"metas atingidas",cor:dados.agua7>=5?"#22c55e":dados.agua7>=3?"#f59e0b":"#ff6b6b"},
+      {label:"Score",val:dados.score,sub:"pontos IRONCUT",cor:dados.score>=71?"#66FFF0":dados.score>=41?"#f59e0b":"#666"},
+    ].map(s=>`<div class="stat"><div class="stat-val" style="color:${s.cor}">${s.val}</div><div class="stat-label">${s.label}</div><div class="stat-sub">${s.sub}</div></div>`).join("")}
+  </div>
+
+  <!-- SEMANA VISUAL -->
+  <div class="semana-card">
+    <div class="card-title">📅 Dias da Semana</div>
+    <div class="semana-grid">
+      ${dados.dias7.map(d=>{
+        const nomes=["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"];
+        const partes=d.data.split("/");
+        const dt=new Date(partes[2],partes[1]-1,partes[0]);
+        const nomeDia=nomes[dt.getDay()];
+        const total=(d.treinou?1:0)+(d.dieta?1:0)+(d.agua>=d.metaAgua?1:0);
+        const borCor=total===3?"rgba(34,197,94,.3)":total===2?"rgba(102,255,240,.2)":total===1?"rgba(245,158,11,.2)":"#1a1a1a";
+        return `<div class="dia-box" style="border-color:${borCor}">
+          <div class="dia-nome">${nomeDia}</div>
+          <div class="dia-num">${partes[0]}</div>
+          <div class="dia-bars">
+            <div class="dia-bar" style="background:${d.treinou?"#22c55e":"#1a1a1a"}"></div>
+            <div class="dia-bar" style="background:${d.dieta?"#66FFF0":"#1a1a1a"}"></div>
+            <div class="dia-bar" style="background:${d.agua>=d.metaAgua?"#60a5fa":"#1a1a1a"}"></div>
+          </div>
+        </div>`;
+      }).join("")}
+    </div>
+    <div style="display:flex;gap:16px;margin-top:12px;flex-wrap:wrap">
+      ${[["#22c55e","Treino"],["#66FFF0","Dieta"],["#60a5fa","Hidratação"]].map(([cor,label])=>`<div style="display:flex;align-items:center;gap:6px;font-size:10px;color:#555"><div style="width:8px;height:8px;border-radius:2px;background:${cor}"></div>${label}</div>`).join("")}
+    </div>
+  </div>
+
+  <!-- DESTAQUES + MELHORAR -->
+  <div class="two-col">
+    <div class="info-card green">
+      <div class="card-title">✅ Destaques da Semana</div>
+      ${relatorio.destaques.map(d=>`<div class="info-item"><div class="info-dot" style="background:#22c55e"></div>${d}</div>`).join("")}
+    </div>
+    <div class="info-card yellow">
+      <div class="card-title">⚠️ Pontos a Melhorar</div>
+      ${relatorio.melhorar.map(d=>`<div class="info-item"><div class="info-dot" style="background:#f59e0b"></div>${d}</div>`).join("")}
+    </div>
+  </div>
+
+  <!-- DESAFIO -->
+  <div class="desafio-card">
+    <div class="desafio-label">🎯 Desafio da Próxima Semana</div>
+    <div class="desafio-texto">${relatorio.desafio}</div>
+  </div>
+
+  <!-- MENSAGEM FINAL -->
+  <div class="mensagem-card">
+    <div style="font-size:24px;margin-bottom:12px">💬</div>
+    <div class="mensagem-texto">"${relatorio.mensagem}"</div>
+    <div style="margin-top:12px;font-size:11px;color:#444;letter-spacing:2px;text-transform:uppercase">— Coach IRONCUT IA</div>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="footer">
+    <div class="footer-logo"><span>IRON</span>CUT 21D</div>
+    <div class="footer-text">appironcut.com • ${relatorio.geradoEm}</div>
+  </div>
+
+</div></body></html>`;
+
+          const blob = new Blob([html], {type:"text/html;charset=utf-8"});
+          const url = URL.createObjectURL(blob);
+          const win = window.open(url,"_blank");
+          if(win){ win.onload=()=>{ setTimeout(()=>{ win.print(); },600); }; }
+        }
+
+        return (
+          <div className="card" style={{padding:"20px 22px",marginTop:18,background:"#0F0F0F",border:"1px solid rgba(102,255,240,.15)"}}>
+            {/* HEADER DO CARD */}
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
+              <div>
+                <p style={{fontFamily:"'Bebas Neue',cursive",fontSize:22,letterSpacing:2,color:C.text}}>📊 RELATÓRIO SEMANAL</p>
+                <p style={{fontSize:11,color:C.muted,marginTop:2}}>Análise completa gerada pela IA com base nos seus dados</p>
+              </div>
+              <div style={{display:"flex",gap:8}}>
+                {relatorio&&<button onClick={exportarRelatorio} style={{padding:"7px 14px",background:"transparent",border:"1px solid rgba(102,255,240,.3)",borderRadius:7,color:C.accent,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:11,letterSpacing:1.5,textTransform:"uppercase",cursor:"pointer"}}>📄 PDF</button>}
+                <button onClick={gerarRelatorio} disabled={gerandoRel} style={{padding:"7px 16px",background:gerandoRel?"rgba(102,255,240,.1)":"linear-gradient(135deg,#00D4C8,#66FFF0)",color:gerandoRel?"#66FFF0":"#000",border:"none",borderRadius:7,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,fontSize:12,letterSpacing:1.5,textTransform:"uppercase",cursor:gerandoRel?"not-allowed":"pointer",opacity:gerandoRel?0.7:1}}>
+                  {gerandoRel?"⏳ Gerando...":relatorio?"🔄 Atualizar":"⚡ Gerar Relatório"}
+                </button>
+              </div>
+            </div>
+
+            {/* ESTADO VAZIO */}
+            {!relatorio&&!gerandoRel&&(
+              <div style={{textAlign:"center",padding:"28px 0"}}>
+                <div style={{fontSize:48,marginBottom:12}}>📋</div>
+                <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:16,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>Nenhum relatório gerado</p>
+                <p style={{fontSize:13,color:C.muted,lineHeight:1.7,maxWidth:340,margin:"0 auto"}}>Clique em <strong style={{color:C.accent}}>Gerar Relatório</strong> para receber uma análise completa da sua semana com destaques, pontos de melhora e desafios.</p>
+              </div>
+            )}
+
+            {/* LOADING */}
+            {gerandoRel&&(
+              <div style={{textAlign:"center",padding:"28px 0"}}>
+                <div style={{display:"flex",gap:8,justifyContent:"center",marginBottom:16}}>
+                  {[0,1,2].map(i=>(<div key={i} style={{width:10,height:10,borderRadius:"50%",background:C.accent,animation:`typing 1.2s ease-in-out ${i*0.2}s infinite`}}/>))}
+                </div>
+                <p style={{fontFamily:"'Bebas Neue',cursive",fontSize:18,letterSpacing:3,color:C.accent}}>Analisando sua semana...</p>
+                <p style={{fontSize:12,color:C.muted,marginTop:6}}>A IA está revisando treinos, dieta, hidratação e evolução</p>
+              </div>
+            )}
+
+            {/* RELATÓRIO INLINE */}
+            {relatorio&&!gerandoRel&&(()=>{
+              const dados = relatorio.dados;
+              const notaCor = relatorio.nota>=8?"#22c55e":relatorio.nota>=6?C.accent:relatorio.nota>=4?"#f59e0b":"#ff6b6b";
+              return(
+                <div style={{animation:"fadeUp .4s ease"}}>
+                  {/* NOTA + TÍTULO */}
+                  <div style={{display:"flex",alignItems:"center",gap:16,padding:"16px 20px",background:"rgba(0,0,0,.3)",borderRadius:10,marginBottom:16}}>
+                    <div style={{textAlign:"center",flexShrink:0}}>
+                      <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:56,lineHeight:1,color:notaCor,textShadow:`0 0 20px ${notaCor}40`}}>{relatorio.nota}</div>
+                      <div style={{fontSize:9,color:C.muted,letterSpacing:2,textTransform:"uppercase"}}>/ 10</div>
+                    </div>
+                    <div style={{flex:1}}>
+                      <p style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,letterSpacing:2,color:C.text,lineHeight:1,marginBottom:6}}>{relatorio.titulo}</p>
+                      <div style={{height:6,background:"#1a1a1a",borderRadius:3,overflow:"hidden",marginBottom:6}}>
+                        <div style={{height:"100%",width:`${relatorio.nota*10}%`,background:`linear-gradient(90deg,${notaCor}88,${notaCor})`,borderRadius:3,transition:"width .8s ease"}}/>
+                      </div>
+                      <p style={{fontSize:11,color:C.muted}}>Gerado em {relatorio.geradoEm} às {relatorio.geradoHora}</p>
+                    </div>
+                  </div>
+
+                  {/* STATS 4 COLUNAS */}
+                  <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10,marginBottom:16}}>
+                    {[
+                      {label:"Treinos",val:`${dados.treinos7}/7`,cor:dados.treinos7>=5?"#22c55e":dados.treinos7>=3?"#f59e0b":"#ff6b6b"},
+                      {label:"Dieta",val:`${dados.dieta7}/7`,cor:dados.dieta7>=5?"#22c55e":dados.dieta7>=3?"#f59e0b":"#ff6b6b"},
+                      {label:"Hidratação",val:`${dados.agua7}/7`,cor:dados.agua7>=5?"#22c55e":dados.agua7>=3?"#f59e0b":"#ff6b6b"},
+                      {label:"Score",val:dados.score,cor:dados.score>=71?C.accent:dados.score>=41?"#f59e0b":"#666"},
+                    ].map(({label,val,cor})=>(
+                      <div key={label} style={{background:"#0D0D0D",border:"1px solid #1a1a1a",borderRadius:8,padding:"12px",textAlign:"center"}}>
+                        <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:26,color:cor,lineHeight:1}}>{val}</div>
+                        <div style={{fontSize:9,color:C.muted,textTransform:"uppercase",letterSpacing:1.5,marginTop:3}}>{label}</div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* RESUMO */}
+                  <div style={{background:"rgba(102,255,240,.04)",border:"1px solid rgba(102,255,240,.1)",borderRadius:8,padding:"14px 16px",marginBottom:16,fontSize:13,color:C.lgray,lineHeight:1.8}}>
+                    {relatorio.resumo}
+                  </div>
+
+                  {/* DESTAQUES + MELHORAR */}
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:16}}>
+                    <div style={{background:"rgba(34,197,94,.05)",border:"1px solid rgba(34,197,94,.2)",borderRadius:10,padding:"14px 16px"}}>
+                      <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:12,textTransform:"uppercase",letterSpacing:1.5,color:"#22c55e",marginBottom:10}}>✅ Destaques</p>
+                      {relatorio.destaques.map((d,i)=>(
+                        <div key={i} style={{display:"flex",gap:8,fontSize:12,color:C.lgray,padding:"5px 0",borderBottom:"1px solid rgba(255,255,255,.04)",lineHeight:1.5}}>
+                          <span style={{color:"#22c55e",flexShrink:0}}>▸</span>{d}
+                        </div>
+                      ))}
+                    </div>
+                    <div style={{background:"rgba(245,158,11,.05)",border:"1px solid rgba(245,158,11,.2)",borderRadius:10,padding:"14px 16px"}}>
+                      <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:12,textTransform:"uppercase",letterSpacing:1.5,color:"#f59e0b",marginBottom:10}}>⚠️ Melhorar</p>
+                      {relatorio.melhorar.map((d,i)=>(
+                        <div key={i} style={{display:"flex",gap:8,fontSize:12,color:C.lgray,padding:"5px 0",borderBottom:"1px solid rgba(255,255,255,.04)",lineHeight:1.5}}>
+                          <span style={{color:"#f59e0b",flexShrink:0}}>▸</span>{d}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* DESAFIO */}
+                  <div style={{background:"rgba(102,255,240,.06)",border:"1px solid rgba(102,255,240,.2)",borderRadius:10,padding:"16px 20px",marginBottom:16,textAlign:"center"}}>
+                    <p style={{fontSize:10,fontWeight:700,letterSpacing:3,textTransform:"uppercase",color:C.accent,marginBottom:8}}>🎯 Desafio da Próxima Semana</p>
+                    <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:18,color:C.text,lineHeight:1.4}}>{relatorio.desafio}</p>
+                  </div>
+
+                  {/* MENSAGEM FINAL */}
+                  <div style={{background:"#0D0D0D",border:"1px solid #1a1a1a",borderRadius:10,padding:"16px 20px",textAlign:"center"}}>
+                    <p style={{fontSize:13,color:C.muted,lineHeight:1.8,fontStyle:"italic"}}>"{relatorio.mensagem}"</p>
+                    <p style={{fontSize:10,color:"#333",letterSpacing:2,textTransform:"uppercase",marginTop:8}}>— Coach IRONCUT IA</p>
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
+        );
+      })()}
     </div>
   );
 }
-
-// ─── TREINOS ──────────────────────────────────────────────────────────────────
 function Treinos({ protocolo, perfil, onUpdateProtocolo }) {
   const [msgs,setMsgs]=useState([{role:"ai",text:`Olá ${perfil.nome.split(" ")[0]}! Sou seu Personal IA 💪 Posso substituir exercícios e o plano será ATUALIZADO automaticamente!`}]);
   const [input,setInput]=useState(""); const [load,setLoad]=useState(false);
