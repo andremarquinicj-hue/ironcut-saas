@@ -822,11 +822,182 @@ function Treinos({ protocolo, perfil, onUpdateProtocolo }) {
   );
 }
 
+// ─── CALCULADORA DE REFEIÇÃO LIVRE ───────────────────────────────────────────
+function CalcRefeicao({ perfil, protocolo }) {
+  const [input, setInput] = useState("");
+  const [load, setLoad] = useState(false);
+  const [resultado, setResultado] = useState(null);
+  const [historico, setHistorico] = useState(() => {
+    try { return JSON.parse(localStorage.getItem(`ic_calc_${perfil.email}_${hoje()}`) || "[]"); }
+    catch { return []; }
+  });
+
+  const totalDia = historico.reduce((acc, r) => ({
+    kcal: acc.kcal + (r.kcal || 0), prot: acc.prot + (r.prot || 0),
+    carb: acc.carb + (r.carb || 0), gord: acc.gord + (r.gord || 0),
+  }), { kcal: 0, prot: 0, carb: 0, gord: 0 });
+
+  const metaKcal = protocolo?.kcal || 2000;
+  const metaProt = protocolo?.prot || 150;
+  const pctKcal = Math.min(100, Math.round((totalDia.kcal / metaKcal) * 100));
+  const pctProt = Math.min(100, Math.round((totalDia.prot / metaProt) * 100));
+
+  async function calcular() {
+    if (!input.trim()) return;
+    setLoad(true); setResultado(null);
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 600,
+          messages: [{ role: "user", content: `Você é um nutricionista especialista. Analise a refeição e retorne SOMENTE JSON válido sem markdown.\n\nRefeição: "${input}"\n\nFormato EXATO:\n{"descricao":"resumo curto","kcal":número,"prot":número,"carb":número,"gord":número,"alimentos":[{"nome":"item","kcal":número,"prot":número,"carb":número,"gord":número}],"dica":"1 frase de feedback"}\n\nSe não conseguir: {"erro":"motivo"}` }]
+        })
+      });
+      const d = await res.json();
+      const txt = d?.content?.[0]?.text || "";
+      const json = JSON.parse(txt.replace(/```json|```/g, "").trim());
+      if (json.erro) { setResultado({ erro: json.erro }); }
+      else {
+        setResultado(json);
+        const novo = { ...json, hora: new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) };
+        const novoHist = [...historico, novo];
+        setHistorico(novoHist);
+        localStorage.setItem(`ic_calc_${perfil.email}_${hoje()}`, JSON.stringify(novoHist));
+        setInput("");
+      }
+    } catch { setResultado({ erro: "Erro ao calcular. Tente novamente." }); }
+    setLoad(false);
+  }
+
+  function limparDia() { setHistorico([]); localStorage.removeItem(`ic_calc_${perfil.email}_${hoje()}`); setResultado(null); }
+
+  const exemplos = ["2 ovos mexidos, 40g aveia e 1 banana","Arroz com feijão, frango grelhado e salada","1 dose de whey com leite e 1 maçã","2 fatias de pão integral com pasta de amendoim","Filé de salmão 200g com batata-doce","Big Mac + batata média + Coca-Cola"];
+
+  return (
+    <div style={{ marginBottom: 20 }}>
+      <div style={{ background: "#0F0F0F", border: "1px solid rgba(102,255,240,.2)", borderRadius: 12, overflow: "hidden" }}>
+        <div style={{ padding: "14px 20px", background: "rgba(102,255,240,.04)", borderBottom: "1px solid rgba(102,255,240,.1)", display: "flex", alignItems: "center", gap: 10 }}>
+          <span style={{ fontSize: 20 }}>🍽️</span>
+          <div>
+            <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 700, fontSize: 15, textTransform: "uppercase", letterSpacing: 1, color: "#fff" }}>Calculadora de Refeição Livre</p>
+            <p style={{ fontSize: 11, color: "#666", marginTop: 1 }}>Descreva o que comeu e a IA calcula calorias e macros</p>
+          </div>
+        </div>
+        <div style={{ padding: "16px 20px" }}>
+          {/* TOTAL DO DIA */}
+          {historico.length > 0 && (
+            <div style={{ background: "rgba(0,0,0,.3)", border: "1px solid #1a1a1a", borderRadius: 10, padding: "12px 16px", marginBottom: 14 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+                <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 700, fontSize: 12, textTransform: "uppercase", letterSpacing: 1, color: "#888" }}>📊 Total do Dia</p>
+                <button onClick={limparDia} style={{ background: "transparent", border: "1px solid #333", color: "#555", fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 700, fontSize: 10, letterSpacing: 1, textTransform: "uppercase", padding: "3px 10px", borderRadius: 4, cursor: "pointer" }}>Limpar</button>
+              </div>
+              {[{ label: "Calorias", val: `${totalDia.kcal} / ${metaKcal} kcal`, pct: pctKcal, cor: pctKcal >= 100 ? "#ff6b6b" : "#66FFF0", bg: pctKcal >= 100 ? "linear-gradient(90deg,#ff6b6b,#ff4444)" : "linear-gradient(90deg,#00D4C8,#66FFF0)" },
+                { label: "Proteína", val: `${totalDia.prot}g / ${metaProt}g`, pct: pctProt, cor: pctProt >= 100 ? "#22c55e" : "#66FFF0", bg: "linear-gradient(90deg,#15803d,#22c55e)" }
+              ].map(({ label, val, pct, cor, bg }) => (
+                <div key={label} style={{ marginBottom: 8 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, marginBottom: 3 }}>
+                    <span style={{ color: "#888" }}>{label}</span>
+                    <span style={{ color: cor, fontWeight: 700 }}>{val} ({pct}%)</span>
+                  </div>
+                  <div style={{ height: 6, background: "#1a1a1a", borderRadius: 3, overflow: "hidden" }}>
+                    <div style={{ height: "100%", width: `${pct}%`, background: bg, borderRadius: 3, transition: "width .5s ease" }} />
+                  </div>
+                </div>
+              ))}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 6, marginTop: 10 }}>
+                {[{ label: "Kcal", val: totalDia.kcal, cor: "#66FFF0" }, { label: "Prot", val: `${totalDia.prot}g`, cor: "#22c55e" }, { label: "Carb", val: `${totalDia.carb}g`, cor: "#f59e0b" }, { label: "Gord", val: `${totalDia.gord}g`, cor: "#a78bfa" }].map(({ label, val, cor }) => (
+                  <div key={label} style={{ background: "#0D0D0D", border: "1px solid #1a1a1a", borderRadius: 6, padding: "7px", textAlign: "center" }}>
+                    <div style={{ fontFamily: "'Bebas Neue',cursive", fontSize: 16, color: cor, lineHeight: 1 }}>{val}</div>
+                    <div style={{ fontSize: 9, color: "#555", textTransform: "uppercase", letterSpacing: 1, marginTop: 2 }}>{label}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* INPUT */}
+          <textarea value={input} onChange={e => setInput(e.target.value)}
+            onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); calcular(); } }}
+            placeholder="Descreva sua refeição... Ex: 200g frango grelhado, 150g arroz integral, salada"
+            rows={3} style={{ width: "100%", padding: "12px 14px", background: "#0D0D0D", border: "1px solid #222", borderRadius: 8, color: "#fff", fontFamily: "'Barlow',sans-serif", fontSize: 13, outline: "none", resize: "vertical", lineHeight: 1.6, marginBottom: 10 }}
+            onFocus={e => e.target.style.borderColor = "#66FFF0"} onBlur={e => e.target.style.borderColor = "#222"}
+          />
+          <button onClick={calcular} disabled={load || !input.trim()} style={{ width: "100%", padding: "12px", background: load || !input.trim() ? "rgba(102,255,240,.1)" : "linear-gradient(135deg,#00D4C8,#66FFF0)", color: load || !input.trim() ? "#66FFF0" : "#000", border: "none", borderRadius: 8, fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 800, fontSize: 14, letterSpacing: 2, textTransform: "uppercase", cursor: load || !input.trim() ? "not-allowed" : "pointer", marginBottom: 12 }}>
+            {load ? "⏳ Calculando..." : "⚡ Calcular Macros"}
+          </button>
+
+          {/* EXEMPLOS */}
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 14 }}>
+            {exemplos.map(ex => (
+              <button key={ex} onClick={() => setInput(ex)} style={{ padding: "4px 10px", borderRadius: 20, border: "1px solid #222", fontSize: 11, color: "#555", cursor: "pointer", background: "#0D0D0D", fontFamily: "'Barlow',sans-serif" }}
+                onMouseOver={e => { e.target.style.borderColor = "#66FFF0"; e.target.style.color = "#66FFF0"; }}
+                onMouseOut={e => { e.target.style.borderColor = "#222"; e.target.style.color = "#555"; }}>
+                {ex.length > 32 ? ex.slice(0, 29) + "..." : ex}
+              </button>
+            ))}
+          </div>
+
+          {/* RESULTADO */}
+          {resultado && !resultado.erro && (
+            <div style={{ background: "rgba(102,255,240,.04)", border: "1px solid rgba(102,255,240,.2)", borderRadius: 10, padding: "14px 16px", animation: "fadeUp .3s ease", marginBottom: 14 }}>
+              <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 700, fontSize: 13, textTransform: "uppercase", letterSpacing: 1, color: "#66FFF0", marginBottom: 10 }}>📋 {resultado.descricao}</p>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 8, marginBottom: 12 }}>
+                {[{ label: "Kcal", val: resultado.kcal, cor: "#66FFF0", emoji: "🔥" }, { label: "Proteína", val: `${resultado.prot}g`, cor: "#22c55e", emoji: "💪" }, { label: "Carb", val: `${resultado.carb}g`, cor: "#f59e0b", emoji: "⚡" }, { label: "Gordura", val: `${resultado.gord}g`, cor: "#a78bfa", emoji: "🫒" }].map(({ label, val, cor, emoji }) => (
+                  <div key={label} style={{ background: "#0D0D0D", border: `1px solid ${cor}25`, borderRadius: 8, padding: "10px 6px", textAlign: "center" }}>
+                    <div style={{ fontSize: 14, marginBottom: 3 }}>{emoji}</div>
+                    <div style={{ fontFamily: "'Bebas Neue',cursive", fontSize: 20, color: cor, lineHeight: 1 }}>{val}</div>
+                    <div style={{ fontSize: 9, color: "#555", textTransform: "uppercase", letterSpacing: 1, marginTop: 2 }}>{label}</div>
+                  </div>
+                ))}
+              </div>
+              {resultado.alimentos?.length > 0 && (
+                <div style={{ marginBottom: 10 }}>
+                  <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", color: "#555", marginBottom: 6 }}>Breakdown:</p>
+                  {resultado.alimentos.map((al, i) => (
+                    <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "5px 0", borderBottom: "1px solid rgba(255,255,255,.04)", fontSize: 12 }}>
+                      <span style={{ color: "#bbb", flex: 1 }}>{al.nome}</span>
+                      <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
+                        <span style={{ color: "#66FFF0", fontWeight: 700 }}>{al.kcal}kcal</span>
+                        <span style={{ color: "#22c55e" }}>{al.prot}g P</span>
+                        <span style={{ color: "#f59e0b" }}>{al.carb}g C</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {resultado.dica && <div style={{ background: "rgba(0,0,0,.3)", borderRadius: 8, padding: "8px 12px", fontSize: 12, color: "#aaa" }}>💡 <strong style={{ color: "#66FFF0" }}>Dica:</strong> {resultado.dica}</div>}
+            </div>
+          )}
+          {resultado?.erro && <div style={{ background: "rgba(255,107,107,.06)", border: "1px solid rgba(255,107,107,.2)", borderRadius: 8, padding: "10px 14px", fontSize: 13, color: "#ff6b6b", marginBottom: 14 }}>⚠️ {resultado.erro}</div>}
+
+          {/* HISTÓRICO DO DIA */}
+          {historico.length > 0 && (
+            <div>
+              <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", color: "#555", marginBottom: 8 }}>Refeições de hoje:</p>
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                {historico.map((r, i) => (
+                  <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 12px", background: "#0D0D0D", border: "1px solid #1a1a1a", borderRadius: 8 }}>
+                    <div><span style={{ fontSize: 10, color: "#555", marginRight: 8 }}>{r.hora}</span><span style={{ fontSize: 12, color: "#bbb" }}>{r.descricao}</span></div>
+                    <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
+                      <span style={{ fontSize: 11, color: "#66FFF0", fontWeight: 700 }}>{r.kcal}kcal</span>
+                      <span style={{ fontSize: 11, color: "#22c55e" }}>{r.prot}g P</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── DIETA ────────────────────────────────────────────────────────────────────
 function Dieta({ protocolo, perfil, onUpdateProtocolo }) {
   const [msgs,setMsgs]=useState([{role:"ai",text:`Olá ${perfil.nome.split(" ")[0]}! Sou sua Nutricionista IA 🥗 Posso substituir alimentos e o cardápio será ATUALIZADO automaticamente!`}]);
   const [input,setInput]=useState(""); const [load,setLoad]=useState(false);
   const [showLista, setShowLista]=useState(false);
+  const [showCalc, setShowCalc]=useState(false);
 
   function gerarPDF() {
     const isMassa = perfil.objetivo === "massa";
@@ -902,9 +1073,11 @@ function Dieta({ protocolo, perfil, onUpdateProtocolo }) {
         <p style={{fontFamily:"'Bebas Neue',cursive",fontSize:34,letterSpacing:1,margin:0}}>DIETA {perfil.objetivo==="massa"?"BULKING":"CUTTING"}</p>
         <div style={{display:"flex",gap:8,flexShrink:0}}>
           <button onClick={gerarPDF} style={{display:"flex",alignItems:"center",gap:6,padding:"8px 14px",background:"transparent",border:`1px solid rgba(102,255,240,.3)`,borderRadius:7,color:"#66FFF0",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:12,letterSpacing:1.5,textTransform:"uppercase",cursor:"pointer",transition:"all .2s",whiteSpace:"nowrap"}} onMouseOver={e=>e.currentTarget.style.background="rgba(102,255,240,.08)"} onMouseOut={e=>e.currentTarget.style.background="transparent"}>📄 Exportar PDF</button>
-          <button onClick={()=>setShowLista(s=>!s)} style={{display:"flex",alignItems:"center",gap:6,padding:"8px 14px",background:showLista?"rgba(102,255,240,.15)":"transparent",border:`1px solid ${showLista?"rgba(102,255,240,.5)":"rgba(102,255,240,.3)"}`,borderRadius:7,color:"#66FFF0",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:12,letterSpacing:1.5,textTransform:"uppercase",cursor:"pointer",transition:"all .2s",whiteSpace:"nowrap"}}>🛒 Lista de Compras</button>
+          <button onClick={()=>setShowCalc(s=>!s)} style={{display:"flex",alignItems:"center",gap:6,padding:"8px 14px",background:showCalc?"rgba(102,255,240,.15)":"transparent",border:`1px solid ${showCalc?"rgba(102,255,240,.5)":"rgba(102,255,240,.3)"}`,borderRadius:7,color:"#66FFF0",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:12,letterSpacing:1.5,textTransform:"uppercase",cursor:"pointer",transition:"all .2s",whiteSpace:"nowrap"}}>🍽️ Calc. Refeição</button>
+          <button onClick={()=>setShowLista(s=>!s)} style={{display:"flex",alignItems:"center",gap:6,padding:"8px 14px",background:showLista?"rgba(102,255,240,.15)":"transparent",border:`1px solid ${showLista?"rgba(102,255,240,.5)":"rgba(102,255,240,.3)"}`,borderRadius:7,color:"#66FFF0",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:12,letterSpacing:1.5,textTransform:"uppercase",cursor:"pointer",transition:"all .2s",whiteSpace:"nowrap"}}>🛒 Lista</button>
         </div>
       </div>
+      {showCalc && <CalcRefeicao perfil={perfil} protocolo={protocolo}/>}
       {showLista&&(<div style={{background:"#0F0F0F",border:"1px solid rgba(102,255,240,.2)",borderRadius:12,padding:"20px 24px",marginBottom:20,animation:"fadeUp .3s ease"}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}><div><p style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,letterSpacing:2,color:"#66FFF0"}}>🛒 LISTA DE COMPRAS — 7 DIAS</p><p style={{fontSize:11,color:"#666",marginTop:2}}>Quantidades calculadas para uma semana completa</p></div><button onClick={()=>{const texto=Object.entries(lista).map(([cat,itens])=>`${cat}\n${itens.map(i=>`  • ${i.qtd} ${i.nome}`).join("\n")}`).join("\n\n");navigator.clipboard.writeText(texto).then(()=>alert("Lista copiada! 📋"));}} style={{padding:"6px 14px",background:"transparent",border:"1px solid #333",borderRadius:6,color:"#666",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:11,letterSpacing:1,textTransform:"uppercase",cursor:"pointer"}}>📋 Copiar</button></div><div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(240px,1fr))",gap:12}}>{Object.entries(lista).map(([categoria,itens])=>(<div key={categoria} style={{background:"rgba(255,255,255,.02)",border:"1px solid #1a1a1a",borderRadius:8,padding:"14px 16px"}}><p style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:12,textTransform:"uppercase",letterSpacing:1,color:"#888",marginBottom:10}}>{categoria}</p>{itens.map((item,i)=>(<div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"5px 0",borderBottom:"1px solid rgba(255,255,255,.04)",fontSize:13}}><span style={{color:"#ccc"}}>{item.nome}</span><span style={{color:"#66FFF0",fontWeight:700,fontSize:12,background:"rgba(102,255,240,.08)",padding:"2px 8px",borderRadius:4,whiteSpace:"nowrap",marginLeft:8}}>{item.qtd}</span></div>))}</div>))}</div></div>)}
       {protocolo?.kcal&&(<div className="macro-grid" style={{marginBottom:18}}><div className="card macro-card"><div className="macro-val">{protocolo.kcal}</div><div style={{fontSize:11,color:"#66FFF0",letterSpacing:1,textTransform:"uppercase",marginTop:2}}>kcal/dia</div><div className="macro-label">Calorias</div></div><div className="card macro-card"><div className="macro-val">{protocolo.prot}<span style={{fontSize:14,color:"#666"}}> g</span></div><div style={{fontSize:11,color:"#66FFF0",letterSpacing:1,textTransform:"uppercase",marginTop:2}}>por dia</div><div className="macro-label">Proteína</div></div><div className="card macro-card"><div className="macro-val">{protocolo.carb}<span style={{fontSize:14,color:"#666"}}> g</span></div><div style={{fontSize:11,color:"#66FFF0",letterSpacing:1,textTransform:"uppercase",marginTop:2}}>por dia</div><div className="macro-label">Carboidrato</div></div></div>)}
       {protocolo?.refeicoes&&(<div className="meal-grid">{protocolo.refeicoes.map((ref,i)=>(<div key={i} className="card meal-card"><div className="meal-head"><div className="meal-time">{ref.h}</div><div className="meal-name">{ref.n}</div></div><div className="meal-body">{ref.it.map((it,j)=><div key={j} className="meal-item">{it}</div>)}</div></div>))}</div>)}
