@@ -983,31 +983,22 @@ function Esporte({ perfil }) {
 
 // ─── UTILS COMPOSIÇÃO CORPORAL ────────────────────────────────────────────────
 function calcGorduraUSNavy(sexo, altura, cintura, pescoco, quadril) {
-  const h = parseFloat(altura);
-  const c = parseFloat(cintura);
-  const p = parseFloat(pescoco);
-  const q = parseFloat(quadril);
+  // ── A fórmula US Navy foi desenvolvida em POLEGADAS. Convertemos cm → pol. ──
+  const h = parseFloat(altura) / 2.54;
+  const c = parseFloat(cintura) / 2.54;
+  const p = parseFloat(pescoco) / 2.54;
+  const q = quadril ? parseFloat(quadril) / 2.54 : null;
+
   if (!h || !c || !p) return null;
 
   if (sexo === "masculino") {
     if (c <= p) return null;
-    const gNavy = 86.010 * Math.log10(c - p) - 70.041 * Math.log10(h) + 36.76;
-    return Math.max(3, Math.min(60, parseFloat(gNavy.toFixed(1))));
+    const g = 86.010 * Math.log10(c - p) - 70.041 * Math.log10(h) + 36.76;
+    return Math.max(3, Math.min(50, parseFloat(g.toFixed(1))));
   } else {
     if (!q || c + q <= p) return null;
-    const gNavy = 163.205 * Math.log10(c + q - p) - 97.684 * Math.log10(h) - 78.387;
-
-    // ── CORREÇÃO PARA FORMATO AMPULHETA ──────────────────────────────────────
-    // A fórmula US Navy superestima gordura em mulheres com quadril estruturalmente
-    // largo (tipo "ampulheta"). Diferença quadril-cintura > 28cm = estrutura óssea,
-    // não gordura. Aplica fator de correção progressivo (máx. 18% de desconto).
-    const diffQC = q - c;
-    let resultado = parseFloat(gNavy.toFixed(1));
-    if (diffQC > 28) {
-      const fator = Math.min(0.18, (diffQC - 28) * 0.009);
-      resultado = parseFloat((resultado * (1 - fator)).toFixed(1));
-    }
-    return Math.max(10, Math.min(55, resultado));
+    const g = 163.205 * Math.log10(c + q - p) - 97.684 * Math.log10(h) - 78.387;
+    return Math.max(10, Math.min(55, parseFloat(g.toFixed(1))));
   }
 }
 
@@ -1098,9 +1089,6 @@ function Medidas({ perfil, pesosLog, onPesoIdealAtualizado }) {
               <p style={{fontSize:10,fontWeight:700,letterSpacing:3,textTransform:"uppercase",color:C.muted,marginBottom:4}}>% Gordura Corporal</p>
               <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:56,lineHeight:1,color:classAtual.cor,textShadow:`0 0 20px ${classAtual.cor}40`}}>{pctAtual}%</div>
               <p style={{fontSize:14,fontWeight:700,color:classAtual.cor,marginTop:4}}>{classAtual.emoji} {classAtual.cls}</p>
-              {isFem && historico.length > 0 && (historico[historico.length-1].quadril - historico[historico.length-1].cintura) > 28 && (
-                <p style={{fontSize:10,color:"#f59e0b",marginTop:6,lineHeight:1.5}}>⚠️ Correção aplicada: quadril estruturalmente largo detectado. Resultado ajustado para refletir composição corporal real.</p>
-              )}
             </div>
             {idealInfo && (
               <div style={{textAlign:"right",background:"rgba(102,255,240,.06)",border:"1px solid rgba(102,255,240,.15)",borderRadius:10,padding:"14px 18px"}}>
@@ -1156,7 +1144,7 @@ function Medidas({ perfil, pesosLog, onPesoIdealAtualizado }) {
       <div className="card" style={{padding:"20px 22px",marginBottom:18}}>
         <p style={{fontFamily:"'Barlow Condensed'",fontWeight:700,fontSize:15,textTransform:"uppercase",letterSpacing:1,marginBottom:4}}>Registrar Novas Medidas</p>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
-          <p style={{fontSize:11,color:C.muted,lineHeight:1.5}}>Use uma fita métrica. Pescoço + Cintura{isFem?" + Quadril":""} são obrigatórios para calcular o % de gordura pela <strong style={{color:C.lgray}}>Fórmula US Navy</strong>.{isFem&&<span style={{color:"#f59e0b"}}> Quadril muito maior que cintura? Correção automática será aplicada.</span>}</p>
+          <p style={{fontSize:11,color:C.muted,lineHeight:1.5}}>Use uma fita métrica. Pescoço + Cintura{isFem?" + Quadril":""} são obrigatórios para calcular o % de gordura pela <strong style={{color:C.lgray}}>Fórmula US Navy</strong>.</p>
           <button onClick={()=>setShowGuia(true)} style={{flexShrink:0,marginLeft:12,padding:"6px 14px",background:"transparent",border:`1px solid rgba(102,255,240,.3)`,borderRadius:6,color:C.accent,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:11,letterSpacing:1,textTransform:"uppercase",cursor:"pointer",whiteSpace:"nowrap"}}>📐 Ver como medir</button>
         </div>
 
