@@ -1241,7 +1241,87 @@ function Treinos({ protocolo, perfil, onUpdateProtocolo }) {
     : C.accent;
   const formatTimer = s => `${Math.floor(s/60)}:${String(s%60).padStart(2,"0")}`;
 
-  function salvarCarga(dia,idx,val){if(!val.trim())return;const key=`${dia}-${idx}`;const atual=cargas[key]||{carga:"",historico:[]};const hist=atual.historico.filter(h=>h!==val).slice(-4);hist.push(val);const novo={...cargas,[key]:{carga:val,historico:hist}};setCargas(novo);localStorage.setItem(CARGA_KEY,JSON.stringify(novo));}
+  // ── MODO TREINO ATIVO ────────────────────────────────────────────────────
+  const [treinoAtivo, setTreinoAtivo] = useState(null);
+  // treinoAtivo = { dia, nome, exercicios:[{nome,sets,series:[{carga,reps,feita}]}], exIdx, serieIdx, fase:'execucao'|'descanso', tempoDescanso }
+
+  function iniciarTreinoAtivo(dia, info) {
+    const exercicios = info.ex.map(([nome, sets]) => {
+      // Extrai número de séries do formato "4×10"
+      const match = sets.match(/^(\d+)/);
+      const numSeries = match ? parseInt(match[1]) : 3;
+      const cargaKey = `${dia}-${info.ex.indexOf ? info.ex.findIndex(e=>e[0]===nome) : 0}`;
+      const cargaSalva = cargas[`${dia}-${info.ex.findIndex(e=>e[0]===nome)}`]?.carga || "";
+      return {
+        nome, sets,
+        numSeries,
+        series: Array.from({length: numSeries}, () => ({ carga: cargaSalva, reps: "", feita: false }))
+      };
+    });
+    setTreinoAtivo({ dia, nome: info.nome, exercicios, exIdx: 0, serieIdx: 0, fase: "execucao", inicio: Date.now() });
+    setTimer(null); setTimerAtivo(false);
+  }
+
+  function concluirSerie() {
+    if (!treinoAtivo) return;
+    const novo = JSON.parse(JSON.stringify(treinoAtivo));
+    novo.exercicios[novo.exIdx].series[novo.serieIdx].feita = true;
+
+    // Salvar carga no histórico
+    const ex = novo.exercicios[novo.exIdx];
+    const carga = ex.series[novo.serieIdx].carga;
+    if (carga) {
+      const key = `${novo.dia}-${novo.exIdx}`;
+      const atual = cargas[key] || {carga:"", historico:[]};
+      const hist = atual.historico.filter(h=>h!==carga).slice(-4);
+      hist.push(carga);
+      const novasCargas = {...cargas, [key]: {carga, historico: hist}};
+      setCargas(novasCargas);
+      localStorage.setItem(CARGA_KEY, JSON.stringify(novasCargas));
+    }
+
+    // Próxima série ou próximo exercício
+    const totalSeries = novo.exercicios[novo.exIdx].numSeries;
+    if (novo.serieIdx < totalSeries - 1) {
+      novo.serieIdx++;
+      novo.fase = "descanso";
+      setTreinoAtivo(novo);
+      iniciarTimer(60, ex.nome);
+    } else if (novo.exIdx < novo.exercicios.length - 1) {
+      novo.exIdx++;
+      novo.serieIdx = 0;
+      novo.fase = "descanso";
+      setTreinoAtivo(novo);
+      iniciarTimer(90, novo.exercicios[novo.exIdx].nome);
+    } else {
+      // Treino concluído!
+      novo.fase = "concluido";
+      novo.fim = Date.now();
+      setTreinoAtivo(novo);
+      setTimer(null); setTimerAtivo(false);
+    }
+  }
+
+  function pularDescanso() {
+    setTimer(null); setTimerAtivo(false);
+    setTreinoAtivo(p => p ? {...p, fase:"execucao"} : p);
+  }
+
+  function atualizarCargaSerie(exIdx, serieIdx, campo, valor) {
+    setTreinoAtivo(p => {
+      if (!p) return p;
+      const novo = JSON.parse(JSON.stringify(p));
+      novo.exercicios[exIdx].series[serieIdx][campo] = valor;
+      return novo;
+    });
+  }
+
+  // Quando timer chega a zero no treino ativo, muda fase para execução
+  useEffect(() => {
+    if (treinoAtivo?.fase === "descanso" && timer === 0) {
+      setTreinoAtivo(p => p ? {...p, fase:"execucao"} : p);
+    }
+  }, [timer]);if(!val.trim())return;const key=`${dia}-${idx}`;const atual=cargas[key]||{carga:"",historico:[]};const hist=atual.historico.filter(h=>h!==val).slice(-4);hist.push(val);const novo={...cargas,[key]:{carga:val,historico:hist}};setCargas(novo);localStorage.setItem(CARGA_KEY,JSON.stringify(novo));}
 
   function sugestaoProgressao(key){
     const dado=cargas[key]||{carga:"",historico:[]};
@@ -1331,30 +1411,178 @@ function Treinos({ protocolo, perfil, onUpdateProtocolo }) {
         }
 
         return(
-          <div key={dia} className="card wcard" style={{background:"#0A0A0A",border:"1px solid #1e1e1e",overflow:"hidden",cursor:"pointer",transition:"border-color .2s"}}
+          <div key={dia} className="card wcard" style={{background:"#0A0A0A",border:"1px solid #1e1e1e",overflow:"hidden",transition:"border-color .2s"}}
             onMouseOver={e=>e.currentTarget.style.borderColor="rgba(102,255,240,.25)"}
             onMouseOut={e=>e.currentTarget.style.borderColor="#1e1e1e"}>
-            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",position:"relative",minHeight:100}}>
-              {/* Texto à esquerda */}
-              <div style={{padding:"16px 18px",zIndex:1,flex:1}}>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",position:"relative",minHeight:110}}>
+              <div style={{padding:"14px 18px",zIndex:1,flex:1}}>
                 <div className="wcard-n">{dia}</div>
                 <div className="wcard-name">{info.nome}</div>
                 <div className="wcard-desc">{info.ex.length} exercícios</div>
+                <button onClick={e=>{e.stopPropagation();iniciarTreinoAtivo(dia,info);}}
+                  style={{marginTop:10,display:"inline-flex",alignItems:"center",gap:6,padding:"7px 16px",background:"linear-gradient(135deg,#00D4C8,#66FFF0)",border:"none",borderRadius:6,color:"#000",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,fontSize:12,letterSpacing:1.5,textTransform:"uppercase",cursor:"pointer"}}>
+                  ▶ Iniciar Treino
+                </button>
               </div>
-              {/* Imagem muscular à direita */}
-              <div style={{width:110,height:100,flexShrink:0,position:"relative",overflow:"hidden"}}>
-                {/* Gradiente de fade à esquerda para fundir com o fundo */}
+              <div style={{width:110,height:110,flexShrink:0,position:"relative",overflow:"hidden"}}>
                 <div style={{position:"absolute",inset:0,background:"linear-gradient(90deg,#0A0A0A 0%,transparent 45%)",zIndex:1}}/>
-                <img
-                  src={getImagemMusculo(info.nome)}
-                  alt={info.nome}
-                  style={{width:"100%",height:"100%",objectFit:"cover",objectPosition:"center top",display:"block"}}
-                />
+                <img src={getImagemMusculo(info.nome)} alt={info.nome} style={{width:"100%",height:"100%",objectFit:"cover",objectPosition:"center top",display:"block"}}/>
               </div>
             </div>
           </div>
         );
       })}</div>
+
+      {/* MODAL MODO TREINO ATIVO */}
+      {treinoAtivo && (
+        <div style={{position:"fixed",inset:0,background:"#0A0A0A",zIndex:500,display:"flex",flexDirection:"column",overflow:"hidden"}}>
+
+          {/* HEADER */}
+          <div style={{padding:"16px 20px",background:"#0F0F0F",borderBottom:"1px solid #1a1a1a",display:"flex",justifyContent:"space-between",alignItems:"center",flexShrink:0}}>
+            <div>
+              <p style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,letterSpacing:2,color:C.accent,lineHeight:1}}>{treinoAtivo.nome}</p>
+              <p style={{fontSize:11,color:C.muted,marginTop:2}}>{treinoAtivo.fase==="concluido"?"✅ Treino Concluído!":`Exercício ${treinoAtivo.exIdx+1} de ${treinoAtivo.exercicios.length}`}</p>
+            </div>
+            <button onClick={()=>{setTreinoAtivo(null);setTimer(null);setTimerAtivo(false);}}
+              style={{background:"transparent",border:"1px solid #333",color:C.muted,borderRadius:8,padding:"8px 16px",cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:12,letterSpacing:1}}>
+              ✕ Sair
+            </button>
+          </div>
+
+          {/* CONTEÚDO */}
+          <div style={{flex:1,overflowY:"auto",padding:"20px"}}>
+
+            {/* CONCLUÍDO */}
+            {treinoAtivo.fase==="concluido"&&(
+              <div style={{textAlign:"center",padding:"32px 20px",animation:"fadeUp .4s ease"}}>
+                <div style={{fontSize:72,marginBottom:16}}>🏆</div>
+                <p style={{fontFamily:"'Bebas Neue',cursive",fontSize:42,letterSpacing:2,color:C.accent,marginBottom:8}}>TREINO CONCLUÍDO!</p>
+                <p style={{fontSize:15,color:C.lgray,marginBottom:28}}>{treinoAtivo.nome} — {Math.round(((treinoAtivo.fim||Date.now())-treinoAtivo.inicio)/60000)} min</p>
+                <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:32,textAlign:"left"}}>
+                  {treinoAtivo.exercicios.map((ex,i)=>{
+                    const feitas=ex.series.filter(s=>s.feita).length;
+                    return(<div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"12px 16px",background:"#0F0F0F",border:"1px solid #1a1a1a",borderRadius:8}}>
+                      <span style={{fontSize:13,color:C.lgray}}>{ex.nome}</span>
+                      <div style={{display:"flex",gap:8,alignItems:"center"}}>
+                        <span style={{fontSize:12,color:C.muted}}>{feitas}/{ex.numSeries} séries</span>
+                        {feitas===ex.numSeries&&<span style={{color:"#22c55e"}}>✓</span>}
+                      </div>
+                    </div>);
+                  })}
+                </div>
+                <button onClick={()=>{setTreinoAtivo(null);setTimer(null);setTimerAtivo(false);}}
+                  style={{padding:"16px 40px",background:"linear-gradient(135deg,#00D4C8,#66FFF0)",border:"none",borderRadius:10,color:"#000",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,fontSize:16,letterSpacing:2,textTransform:"uppercase",cursor:"pointer"}}>
+                  Finalizar 💪
+                </button>
+              </div>
+            )}
+
+            {/* DESCANSO */}
+            {treinoAtivo.fase==="descanso"&&(
+              <div style={{textAlign:"center",padding:"20px 0",animation:"fadeUp .3s ease"}}>
+                <p style={{fontSize:11,fontWeight:700,letterSpacing:3,textTransform:"uppercase",color:C.muted,marginBottom:12}}>⏱️ Descansando...</p>
+                <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:88,lineHeight:1,color:timerCor,textShadow:`0 0 30px ${timerCor}60`,marginBottom:8}}>
+                  {timer!==null&&timer>0?formatTimer(timer):"GO!"}
+                </div>
+                <div style={{height:8,background:"#1a1a1a",borderRadius:4,overflow:"hidden",margin:"16px auto 24px",maxWidth:280}}>
+                  <div style={{height:"100%",width:`${timerPct}%`,background:`linear-gradient(90deg,${timerCor},${timerCor})`,borderRadius:4,transition:"width 1s linear"}}/>
+                </div>
+                <p style={{fontSize:13,color:C.muted,marginBottom:6}}>Próximo:</p>
+                <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:20,color:C.accent,marginBottom:28}}>
+                  {treinoAtivo.exercicios[treinoAtivo.exIdx].nome} — Série {treinoAtivo.serieIdx+1}
+                </p>
+                <button onClick={pularDescanso}
+                  style={{padding:"14px 32px",background:"transparent",border:"2px solid rgba(102,255,240,.4)",borderRadius:10,color:C.accent,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,fontSize:14,letterSpacing:2,textTransform:"uppercase",cursor:"pointer"}}>
+                  ⏭ Pular Descanso
+                </button>
+              </div>
+            )}
+
+            {/* EXECUÇÃO */}
+            {treinoAtivo.fase==="execucao"&&(()=>{
+              const ex=treinoAtivo.exercicios[treinoAtivo.exIdx];
+              const serie=ex.series[treinoAtivo.serieIdx];
+              const progPct=Math.round((treinoAtivo.exIdx/treinoAtivo.exercicios.length)*100);
+              const isUltima=treinoAtivo.exIdx===treinoAtivo.exercicios.length-1&&treinoAtivo.serieIdx===ex.numSeries-1;
+              return(
+                <div style={{animation:"fadeUp .3s ease"}}>
+                  {/* Progresso geral */}
+                  <div style={{marginBottom:20}}>
+                    <div style={{display:"flex",justifyContent:"space-between",fontSize:11,color:C.muted,marginBottom:6}}>
+                      <span>Progresso do treino</span>
+                      <span style={{color:C.accent}}>{treinoAtivo.exIdx+1}/{treinoAtivo.exercicios.length}</span>
+                    </div>
+                    <div style={{height:4,background:"#1a1a1a",borderRadius:2,overflow:"hidden"}}>
+                      <div style={{height:"100%",width:`${progPct}%`,background:`linear-gradient(90deg,${C.accent2},${C.accent})`,borderRadius:2,transition:"width .5s"}}/>
+                    </div>
+                  </div>
+
+                  {/* Card exercício */}
+                  <div style={{background:"#0F0F0F",border:"1px solid rgba(102,255,240,.2)",borderRadius:14,padding:"20px",marginBottom:16}}>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:16}}>
+                      <div>
+                        <p style={{fontSize:10,fontWeight:700,letterSpacing:2,textTransform:"uppercase",color:C.accent,marginBottom:4}}>Exercício {treinoAtivo.exIdx+1}</p>
+                        <p style={{fontFamily:"'Bebas Neue',cursive",fontSize:28,lineHeight:1,color:C.text}}>{ex.nome}</p>
+                        <p style={{fontSize:12,color:C.muted,marginTop:4}}>{ex.sets}</p>
+                      </div>
+                      <div style={{textAlign:"center",background:"rgba(102,255,240,.08)",border:"1px solid rgba(102,255,240,.2)",borderRadius:10,padding:"12px 18px",flexShrink:0}}>
+                        <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:36,color:C.accent,lineHeight:1}}>{treinoAtivo.serieIdx+1}</div>
+                        <div style={{fontSize:10,color:C.muted,textTransform:"uppercase",letterSpacing:1}}>de {ex.numSeries}</div>
+                      </div>
+                    </div>
+
+                    {/* Bolinhas séries */}
+                    <div style={{display:"flex",gap:8,marginBottom:20,flexWrap:"wrap"}}>
+                      {ex.series.map((s,i)=>(
+                        <div key={i} style={{width:34,height:34,borderRadius:"50%",background:s.feita?"#22c55e":i===treinoAtivo.serieIdx?"rgba(102,255,240,.15)":"#1a1a1a",border:`2px solid ${s.feita?"#22c55e":i===treinoAtivo.serieIdx?C.accent:"#2a2a2a"}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:700,color:s.feita?"#000":i===treinoAtivo.serieIdx?C.accent:C.muted,transition:"all .3s"}}>
+                          {s.feita?"✓":i+1}
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Inputs */}
+                    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:16}}>
+                      <div className="field" style={{margin:0}}>
+                        <label>⚖️ Carga (kg)</label>
+                        <input type="number" placeholder="0" value={serie.carga}
+                          onChange={e=>atualizarCargaSerie(treinoAtivo.exIdx,treinoAtivo.serieIdx,"carga",e.target.value)}
+                          style={{width:"100%",padding:"14px",background:"#0D0D0D",border:"1px solid #222",borderRadius:8,color:C.accent,fontFamily:"'Bebas Neue',cursive",fontSize:24,outline:"none",textAlign:"center"}}
+                          onFocus={e=>e.target.style.borderColor="#66FFF0"} onBlur={e=>e.target.style.borderColor="#222"}/>
+                      </div>
+                      <div className="field" style={{margin:0}}>
+                        <label>🔁 Reps feitas</label>
+                        <input type="number" placeholder="0" value={serie.reps}
+                          onChange={e=>atualizarCargaSerie(treinoAtivo.exIdx,treinoAtivo.serieIdx,"reps",e.target.value)}
+                          style={{width:"100%",padding:"14px",background:"#0D0D0D",border:"1px solid #222",borderRadius:8,color:"#22c55e",fontFamily:"'Bebas Neue',cursive",fontSize:24,outline:"none",textAlign:"center"}}
+                          onFocus={e=>e.target.style.borderColor="#22c55e"} onBlur={e=>e.target.style.borderColor="#222"}/>
+                      </div>
+                    </div>
+
+                    {/* Botão concluir */}
+                    <button onClick={concluirSerie}
+                      style={{width:"100%",padding:"16px",background:"linear-gradient(135deg,#00D4C8,#66FFF0)",border:"none",borderRadius:10,color:"#000",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,fontSize:15,letterSpacing:2,textTransform:"uppercase",cursor:"pointer",boxShadow:"0 0 20px rgba(102,255,240,.2)"}}>
+                      {isUltima?"🏆 Finalizar Treino":`✓ Série ${treinoAtivo.serieIdx+1} Concluída →`}
+                    </button>
+                  </div>
+
+                  {/* Próximos */}
+                  {treinoAtivo.exIdx<treinoAtivo.exercicios.length-1&&(
+                    <div>
+                      <p style={{fontSize:10,fontWeight:700,letterSpacing:2,textTransform:"uppercase",color:C.muted,marginBottom:8}}>A seguir:</p>
+                      {treinoAtivo.exercicios.slice(treinoAtivo.exIdx+1,treinoAtivo.exIdx+3).map((ex2,i)=>(
+                        <div key={i} style={{display:"flex",justifyContent:"space-between",padding:"10px 14px",background:"#0F0F0F",border:"1px solid #1a1a1a",borderRadius:8,marginBottom:6,fontSize:13}}>
+                          <span style={{color:C.muted}}>{treinoAtivo.exIdx+2+i}. {ex2.nome}</span>
+                          <span style={{color:"#333"}}>{ex2.sets}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+          </div>
+        </div>
+      )}
 
       {/* MODAL 1RM */}
       {modal1RM&&(
