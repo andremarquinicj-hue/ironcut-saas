@@ -2070,6 +2070,252 @@ function Medidas({ perfil, pesosLog, onPesoIdealAtualizado }) {
   );
 }
 
+// ─── FOTOS DE PROGRESSO ───────────────────────────────────────────────────────
+function Fotos({ perfil }) {
+  const FOTOS_KEY = `ic_fotos_${perfil.email}`;
+  const [fotos, setFotos] = useState(() => {
+    try { return JSON.parse(localStorage.getItem(FOTOS_KEY) || "[]"); } catch { return []; }
+  });
+  const [modalFoto, setModalFoto] = useState(null); // foto em fullscreen
+  const [comparando, setComparando] = useState(false);
+  const [comp1, setComp1] = useState(null);
+  const [comp2, setComp2] = useState(null);
+  const [categoria, setCategoria] = useState("Frente");
+  const [descricao, setDescricao] = useState("");
+  const [peso, setPeso] = useState("");
+  const inputRef = useState(null);
+
+  const categorias = ["Frente","Costas","Lateral","Abdômen","Outros"];
+
+  function salvarFoto(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const nova = {
+        id: Date.now(),
+        data: hoje(),
+        dataISO: new Date().toISOString(),
+        categoria,
+        descricao,
+        peso: peso || null,
+        src: ev.target.result,
+      };
+      const novas = [nova, ...fotos];
+      setFotos(novas);
+      try { localStorage.setItem(FOTOS_KEY, JSON.stringify(novas)); }
+      catch { alert("Armazenamento cheio. Exclua fotos antigas para liberar espaço."); }
+      setDescricao(""); setPeso("");
+    };
+    reader.readAsDataURL(file);
+    e.target.value = "";
+  }
+
+  function excluirFoto(id) {
+    if (!window.confirm("Excluir esta foto?")) return;
+    const novas = fotos.filter(f => f.id !== id);
+    setFotos(novas);
+    localStorage.setItem(FOTOS_KEY, JSON.stringify(novas));
+    if (modalFoto?.id === id) setModalFoto(null);
+  }
+
+  // Agrupa por categoria
+  const porCategoria = categorias.reduce((acc, cat) => {
+    acc[cat] = fotos.filter(f => f.categoria === cat);
+    return acc;
+  }, {});
+
+  const fotosFiltradas = fotos.filter(f => f.categoria === categoria);
+
+  return (
+    <div>
+      <div className="sec-label">Transformação Visual</div>
+      <p className="sec-title">📸 FOTOS DE <span style={{color:C.accent}}>PROGRESSO</span></p>
+
+      {/* UPLOAD */}
+      <div className="card" style={{padding:"20px 22px",marginBottom:18}}>
+        <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:14,textTransform:"uppercase",letterSpacing:1,marginBottom:14}}>Registrar Nova Foto</p>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:12}}>
+          <div className="field" style={{margin:0}}>
+            <label>Categoria</label>
+            <select value={categoria} onChange={e=>setCategoria(e.target.value)}>
+              {categorias.map(c=><option key={c} value={c}>{c}</option>)}
+            </select>
+          </div>
+          <div className="field" style={{margin:0}}>
+            <label>Peso atual (kg)</label>
+            <input type="number" placeholder="Ex: 85.5" value={peso} onChange={e=>setPeso(e.target.value)} step="0.1"/>
+          </div>
+        </div>
+        <div className="field" style={{marginBottom:12}}>
+          <label>Descrição (opcional)</label>
+          <input placeholder="Ex: Semana 3 — início do cutting" value={descricao} onChange={e=>setDescricao(e.target.value)}/>
+        </div>
+        <label style={{display:"flex",alignItems:"center",justifyContent:"center",gap:10,padding:"14px",background:"rgba(102,255,240,.06)",border:"2px dashed rgba(102,255,240,.25)",borderRadius:10,cursor:"pointer",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:14,letterSpacing:1.5,textTransform:"uppercase",color:C.accent,transition:"all .2s"}}
+          onMouseOver={e=>e.currentTarget.style.background="rgba(102,255,240,.1)"}
+          onMouseOut={e=>e.currentTarget.style.background="rgba(102,255,240,.06)"}>
+          <span style={{fontSize:22}}>📷</span> Selecionar Foto
+          <input type="file" accept="image/*" capture="environment" style={{display:"none"}} onChange={salvarFoto}/>
+        </label>
+      </div>
+
+      {/* STATS */}
+      {fotos.length > 0 && (
+        <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12,marginBottom:18}}>
+          {[
+            {label:"Total de Fotos",val:fotos.length,icon:"📸"},
+            {label:"Semanas",val:Math.ceil(fotos.length/3)||1,icon:"📅"},
+            {label:"Última Foto",val:fotos[0]?.data||"—",icon:"🕐"},
+          ].map(({label,val,icon})=>(
+            <div key={label} className="card" style={{padding:"14px",textAlign:"center"}}>
+              <div style={{fontSize:22,marginBottom:6}}>{icon}</div>
+              <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:22,color:C.accent,lineHeight:1}}>{val}</div>
+              <div style={{fontSize:9,color:C.muted,textTransform:"uppercase",letterSpacing:1.5,marginTop:3}}>{label}</div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {fotos.length > 0 && (
+        <>
+          {/* TABS + COMPARAR */}
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14,flexWrap:"wrap",gap:8}}>
+            <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+              {categorias.filter(c=>porCategoria[c].length>0).map(cat=>(
+                <button key={cat} onClick={()=>{setCategoria(cat);setComparando(false);setComp1(null);setComp2(null);}}
+                  style={{padding:"6px 14px",borderRadius:6,border:`1px solid ${categoria===cat?"rgba(102,255,240,.5)":"#2a2a2a"}`,background:categoria===cat?"rgba(102,255,240,.1)":"#0D0D0D",color:categoria===cat?C.accent:C.muted,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:12,letterSpacing:1,cursor:"pointer"}}>
+                  {cat} <span style={{fontSize:10,opacity:.7}}>({porCategoria[cat].length})</span>
+                </button>
+              ))}
+            </div>
+            {fotosFiltradas.length >= 2 && (
+              <button onClick={()=>{setComparando(s=>!s);setComp1(null);setComp2(null);}}
+                style={{padding:"6px 16px",borderRadius:6,border:`1px solid ${comparando?"rgba(167,139,250,.5)":"#2a2a2a"}`,background:comparando?"rgba(167,139,250,.1)":"#0D0D0D",color:comparando?C.purple:C.muted,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:12,letterSpacing:1,cursor:"pointer"}}>
+                ⚖️ Comparar
+              </button>
+            )}
+          </div>
+
+          {/* MODO COMPARAÇÃO */}
+          {comparando && (
+            <div className="card" style={{padding:"16px 20px",marginBottom:18,border:"1px solid rgba(167,139,250,.2)"}}>
+              <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:12,textTransform:"uppercase",letterSpacing:1.5,color:C.purple,marginBottom:12}}>⚖️ Selecione 2 fotos para comparar</p>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:12}}>
+                {[{slot:comp1,setSlot:setComp1,label:"ANTES"},{slot:comp2,setSlot:setComp2,label:"DEPOIS"}].map(({slot,setSlot,label})=>(
+                  <div key={label}>
+                    <p style={{fontSize:10,fontWeight:700,letterSpacing:2,textTransform:"uppercase",color:C.muted,marginBottom:6}}>{label}</p>
+                    {slot ? (
+                      <div style={{position:"relative"}}>
+                        <img src={slot.src} alt={label} style={{width:"100%",aspectRatio:"3/4",objectFit:"cover",borderRadius:8,border:`2px solid ${C.purple}`}}/>
+                        <div style={{position:"absolute",bottom:6,left:6,right:6,background:"rgba(0,0,0,.8)",borderRadius:5,padding:"4px 8px",fontSize:10,color:"#fff"}}>{slot.data}{slot.peso&&` • ${slot.peso}kg`}</div>
+                        <button onClick={()=>setSlot(null)} style={{position:"absolute",top:6,right:6,background:"rgba(0,0,0,.8)",border:"none",color:"#fff",borderRadius:4,padding:"2px 8px",cursor:"pointer",fontSize:12}}>✕</button>
+                      </div>
+                    ) : (
+                      <div style={{aspectRatio:"3/4",background:"#0D0D0D",border:"2px dashed #2a2a2a",borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",color:C.muted,fontSize:12}}>Clique em uma foto abaixo</div>
+                    )}
+                  </div>
+                ))}
+              </div>
+              {comp1&&comp2&&(
+                <div style={{background:"rgba(167,139,250,.08)",border:"1px solid rgba(167,139,250,.2)",borderRadius:8,padding:"12px 16px",fontSize:12,color:C.lgray}}>
+                  {comp1.peso&&comp2.peso&&(<p style={{marginBottom:4}}>⚖️ Variação de peso: <strong style={{color:parseFloat(comp2.peso)<parseFloat(comp1.peso)?C.accent:"#ff6b6b"}}>{(parseFloat(comp2.peso)-parseFloat(comp1.peso)).toFixed(1)}kg</strong></p>)}
+                  <p>📅 Período: <strong style={{color:C.text}}>{comp1.data}</strong> → <strong style={{color:C.text}}>{comp2.data}</strong></p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* GRID DE FOTOS */}
+          <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10}}>
+            {fotosFiltradas.map(foto=>{
+              const selecionada = comp1?.id===foto.id||comp2?.id===foto.id;
+              const slotNumero = comp1?.id===foto.id?1:comp2?.id===foto.id?2:null;
+              return(
+                <div key={foto.id} style={{position:"relative",cursor:"pointer"}}
+                  onClick={()=>{
+                    if(comparando){
+                      if(comp1?.id===foto.id){setComp1(null);return;}
+                      if(comp2?.id===foto.id){setComp2(null);return;}
+                      if(!comp1){setComp1(foto);}
+                      else if(!comp2){setComp2(foto);}
+                    } else { setModalFoto(foto); }
+                  }}>
+                  <img src={foto.src} alt={foto.categoria}
+                    style={{width:"100%",aspectRatio:"3/4",objectFit:"cover",borderRadius:8,border:`2px solid ${selecionada?"rgba(167,139,250,.8)":"rgba(255,255,255,.06)"}`,transition:"all .2s"}}/>
+                  {/* Badge slot comparação */}
+                  {slotNumero&&(
+                    <div style={{position:"absolute",top:6,left:6,background:C.purple,color:"#fff",fontFamily:"'Bebas Neue',cursive",fontSize:14,padding:"2px 8px",borderRadius:4}}>{slotNumero===1?"ANTES":"DEPOIS"}</div>
+                  )}
+                  {/* Info overlay */}
+                  <div style={{position:"absolute",bottom:0,left:0,right:0,background:"linear-gradient(transparent,rgba(0,0,0,.9))",borderRadius:"0 0 7px 7px",padding:"16px 8px 8px"}}>
+                    <p style={{fontSize:10,fontWeight:700,color:C.accent,letterSpacing:1}}>{foto.data}</p>
+                    {foto.peso&&<p style={{fontSize:10,color:"#bbb"}}>{foto.peso}kg</p>}
+                  </div>
+                  {/* Botão excluir */}
+                  {!comparando&&(
+                    <button onClick={e=>{e.stopPropagation();excluirFoto(foto.id);}}
+                      style={{position:"absolute",top:6,right:6,background:"rgba(0,0,0,.8)",border:"none",color:"#888",borderRadius:4,padding:"2px 8px",cursor:"pointer",fontSize:12,lineHeight:1}}
+                      onMouseOver={e=>e.target.style.color="#ff6b6b"}
+                      onMouseOut={e=>e.target.style.color="#888"}>✕</button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </>
+      )}
+
+      {/* ESTADO VAZIO */}
+      {fotos.length === 0 && (
+        <div className="card" style={{padding:"40px 28px",textAlign:"center"}}>
+          <div style={{fontSize:56,marginBottom:16}}>📸</div>
+          <p style={{fontFamily:"'Bebas Neue',cursive",fontSize:22,letterSpacing:2,marginBottom:8}}>Nenhuma foto registrada</p>
+          <p style={{fontSize:13,color:C.muted,lineHeight:1.8,maxWidth:340,margin:"0 auto"}}>Registre fotos semanais para acompanhar sua transformação visual. A evolução que o espelho não mostra, as fotos revelam.</p>
+        </div>
+      )}
+
+      {/* MODAL FULLSCREEN */}
+      {modalFoto&&(
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.97)",zIndex:300,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:16}} onClick={()=>setModalFoto(null)}>
+          <div style={{maxWidth:500,width:"100%",animation:"fadeUp .3s ease"}} onClick={e=>e.stopPropagation()}>
+            {/* Header */}
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+              <div>
+                <p style={{fontFamily:"'Bebas Neue',cursive",fontSize:18,letterSpacing:2,color:C.accent}}>{modalFoto.categoria}</p>
+                <p style={{fontSize:11,color:C.muted}}>{modalFoto.data}{modalFoto.peso&&` • ${modalFoto.peso}kg`}</p>
+              </div>
+              <div style={{display:"flex",gap:8}}>
+                <button onClick={()=>excluirFoto(modalFoto.id)} style={{padding:"6px 14px",background:"rgba(255,107,107,.1)",border:"1px solid rgba(255,107,107,.3)",borderRadius:6,color:"#ff6b6b",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:12,cursor:"pointer"}}>🗑️ Excluir</button>
+                <button onClick={()=>setModalFoto(null)} style={{padding:"6px 14px",background:"transparent",border:"1px solid #333",borderRadius:6,color:C.muted,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:12,cursor:"pointer"}}>✕ Fechar</button>
+              </div>
+            </div>
+            {/* Foto */}
+            <img src={modalFoto.src} alt="" style={{width:"100%",maxHeight:"70vh",objectFit:"contain",borderRadius:12,border:"1px solid #202020"}}/>
+            {/* Descrição */}
+            {modalFoto.descricao&&<p style={{marginTop:12,fontSize:13,color:C.lgray,textAlign:"center",lineHeight:1.6}}>"{modalFoto.descricao}"</p>}
+            {/* Navegação */}
+            {fotosFiltradas.length > 1 && (
+              <div style={{display:"flex",justifyContent:"space-between",marginTop:12,gap:8}}>
+                {(()=>{
+                  const idx = fotosFiltradas.findIndex(f=>f.id===modalFoto.id);
+                  const prev = fotosFiltradas[idx+1];
+                  const next = fotosFiltradas[idx-1];
+                  return(
+                    <>
+                      <button onClick={()=>prev&&setModalFoto(prev)} disabled={!prev} style={{flex:1,padding:"8px",background:"transparent",border:`1px solid ${prev?"#333":"#1a1a1a"}`,borderRadius:7,color:prev?C.muted:"#333",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:12,cursor:prev?"pointer":"not-allowed"}}>← Anterior</button>
+                      <button onClick={()=>next&&setModalFoto(next)} disabled={!next} style={{flex:1,padding:"8px",background:"transparent",border:`1px solid ${next?"#333":"#1a1a1a"}`,borderRadius:7,color:next?C.muted:"#333",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:12,cursor:next?"pointer":"not-allowed"}}>Próxima →</button>
+                    </>
+                  );
+                })()}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── DEMO PERFIL ─────────────────────────────────────────────────────────────
 const DEMO_PERFIL={nome:"Carlos Mendes",email:"demo@ironcut.app",senha:"demo123",objetivo:"fat",sexo:"masculino",idade:"34",peso:"92",altura:"178",nivelAtividade:"Moderadamente ativo (3-4x/semana)",localTreino:"Academia completa",restricoes:[],condicoes:["Nenhuma"]};
 
@@ -2175,6 +2421,7 @@ export default function App() {
     {id:"treinos",  icon:"🏋",label:"Treinos"},
     {id:"dieta",    icon:"🥩",label:"Dieta"},
     {id:"medidas",  icon:"📏",label:"Medidas"},
+    {id:"fotos",    icon:"📸",label:"Progresso"},
     {id:"esporte",  icon:"⚡",label:"Esporte"},
     {id:"perfil",   icon:"👤",label:"Perfil"},
   ];
@@ -2225,6 +2472,7 @@ export default function App() {
             {aba==="treinos"&&proto&&<Treinos protocolo={proto} perfil={perfil} onUpdateProtocolo={p=>{setProto(p);syncStorage(perfil,p,pesosLog,aguaLog);}}/>}
             {aba==="dieta"&&proto&&<Dieta protocolo={proto} perfil={perfil} onUpdateProtocolo={p=>{setProto(p);syncStorage(perfil,p,pesosLog,aguaLog);}}/>}
             {aba==="medidas"&&<Medidas perfil={perfil} pesosLog={pesosLog} onPesoIdealAtualizado={v=>setPesoIdealReal(v)}/>}
+            {aba==="fotos"&&<Fotos perfil={perfil}/>}
             {aba==="esporte"&&<Esporte perfil={perfil}/>}
             {aba==="perfil"&&<Perfil perfil={perfil} onLogout={onLogout} onAtualizarDados={novoPerfil=>{setPerfil(novoPerfil);syncStorage(novoPerfil,proto,pesosLog,aguaLog);}} onRefazerProtocolo={async(novoPerfil)=>{
               setLoading(true);
