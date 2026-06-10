@@ -422,21 +422,16 @@ function saveSession(email,senha){localStorage.setItem("ic_sess_v2",JSON.stringi
 function clearSession(){localStorage.removeItem("ic_sess_v2");}
 function getSession(){try{return JSON.parse(localStorage.getItem("ic_sess_v2")||"null");}catch{return null;}}
 
-// ─── ✅ NOVO: VERIFICAÇÃO DE COMPRADOR ───────────────────────────────────────
+// ─── VERIFICAÇÃO DE COMPRADOR ────────────────────────────────────────────────
 async function verificarComprador(email) {
-  // Emails de demo e admin sempre liberados
   if (email === "demo@ironcut.app") return true;
-
   const chave = email.replace(/\./g, "_").replace(/@/g, "__at__");
   try {
-    const res = await fetch(
-      `https://ironcut-21d-default-rtdb.firebaseio.com/compradores/${chave}.json`
-    );
+    const res = await fetch(`https://ironcut-21d-default-rtdb.firebaseio.com/compradores/${chave}.json`);
     const data = await res.json();
     if (data && data.status === "ativo") return true;
     return false;
   } catch {
-    // Se Firebase Realtime DB falhar, tenta Firestore
     const fb = getFirebase();
     if (fb && fb.db) {
       try {
@@ -448,69 +443,19 @@ async function verificarComprador(email) {
   }
 }
 
-// ─── ✅ NOVO: TELA DE ACESSO BLOQUEADO ───────────────────────────────────────
+// ─── TELA DE ACESSO BLOQUEADO ────────────────────────────────────────────────
 function AcessoBloqueado({ email, onLogout }) {
   return (
-    <div style={{
-      minHeight:"100vh", background:"#0A0A0A", display:"flex",
-      alignItems:"center", justifyContent:"center", padding:24,
-      fontFamily:"'Barlow', sans-serif"
-    }}>
+    <div style={{minHeight:"100vh",background:"#0A0A0A",display:"flex",alignItems:"center",justifyContent:"center",padding:24,fontFamily:"'Barlow', sans-serif"}}>
       <style>{FONTS}</style>
-      <div style={{
-        maxWidth:480, width:"100%", background:"#141414",
-        border:"1px solid #202020", borderRadius:16, padding:40, textAlign:"center",
-        animation:"fadeUp .4s ease"
-      }}>
-        <div style={{
-          width:72, height:72, borderRadius:"50%",
-          background:"rgba(255,60,60,0.08)", border:"2px solid rgba(255,60,60,0.25)",
-          display:"flex", alignItems:"center", justifyContent:"center",
-          margin:"0 auto 24px", fontSize:32
-        }}>🔒</div>
-
-        <p style={{fontFamily:"'Bebas Neue',cursive",fontSize:32,letterSpacing:2,marginBottom:8,color:"#fff"}}>
-          ACESSO NEGADO
-        </p>
-        <p style={{fontSize:14,color:"#666",marginBottom:8,lineHeight:1.6}}>
-          O e-mail <strong style={{color:"#fff"}}>{email}</strong> não possui uma compra ativa do IRONCUT 21D.
-        </p>
-        <p style={{fontSize:13,color:"#444",marginBottom:28,lineHeight:1.7}}>
-          Se você comprou recentemente, aguarde alguns minutos e tente novamente.
-          O acesso é liberado automaticamente após a confirmação do pagamento.
-        </p>
-
-        <a
-          href="https://pay.kiwify.com.br/DqjU8H4"
-          target="_blank"
-          rel="noreferrer"
-          style={{
-            display:"block",
-            background:"linear-gradient(135deg,#00D4C8,#66FFF0)",
-            color:"#000", fontFamily:"'Barlow Condensed',sans-serif",
-            fontWeight:800, fontSize:15, letterSpacing:1.5,
-            textTransform:"uppercase", padding:"15px 32px",
-            borderRadius:8, textDecoration:"none", marginBottom:12
-          }}
-        >
-          Adquirir IRONCUT 21D →
-        </a>
-
-        <button
-          onClick={onLogout}
-          style={{
-            background:"transparent", border:"1px solid #202020", color:"#555",
-            fontFamily:"'Barlow Condensed',sans-serif", fontWeight:700,
-            fontSize:13, letterSpacing:1.5, textTransform:"uppercase",
-            padding:"11px 24px", borderRadius:8, cursor:"pointer", width:"100%"
-          }}
-        >
-          Sair da conta
-        </button>
-
-        <p style={{marginTop:20,fontSize:11,color:"#333"}}>
-          Dúvidas? ironcut21D@outlook.com
-        </p>
+      <div style={{maxWidth:480,width:"100%",background:"#141414",border:"1px solid #202020",borderRadius:16,padding:40,textAlign:"center",animation:"fadeUp .4s ease"}}>
+        <div style={{width:72,height:72,borderRadius:"50%",background:"rgba(255,60,60,0.08)",border:"2px solid rgba(255,60,60,0.25)",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 24px",fontSize:32}}>🔒</div>
+        <p style={{fontFamily:"'Bebas Neue',cursive",fontSize:32,letterSpacing:2,marginBottom:8,color:"#fff"}}>ACESSO NEGADO</p>
+        <p style={{fontSize:14,color:"#666",marginBottom:8,lineHeight:1.6}}>O e-mail <strong style={{color:"#fff"}}>{email}</strong> não possui uma compra ativa do IRONCUT 21D.</p>
+        <p style={{fontSize:13,color:"#444",marginBottom:28,lineHeight:1.7}}>Se você comprou recentemente, aguarde alguns minutos e tente novamente. O acesso é liberado automaticamente após a confirmação do pagamento.</p>
+        <a href="https://pay.kiwify.com.br/DqjU8H4" target="_blank" rel="noreferrer" style={{display:"block",background:"linear-gradient(135deg,#00D4C8,#66FFF0)",color:"#000",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,fontSize:15,letterSpacing:1.5,textTransform:"uppercase",padding:"15px 32px",borderRadius:8,textDecoration:"none",marginBottom:12}}>Adquirir IRONCUT 21D →</a>
+        <button onClick={onLogout} style={{background:"transparent",border:"1px solid #202020",color:"#555",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:13,letterSpacing:1.5,textTransform:"uppercase",padding:"11px 24px",borderRadius:8,cursor:"pointer",width:"100%"}}>Sair da conta</button>
+        <p style={{marginTop:20,fontSize:11,color:"#333"}}>Dúvidas? ironcut21D@outlook.com</p>
       </div>
     </div>
   );
@@ -562,7 +507,6 @@ function Login({ onLogin, onBack }) {
     try {
       const conta = await getContaFirebase(email);
       if(conta && conta.senha===senha){
-        // ✅ VERIFICAÇÃO DE COMPRA
         const comprou = await verificarComprador(email);
         saveSession(email, senha);
         onLogin(conta.perfil, conta.protocolo, conta.pesosLog||[], conta.aguaLog||{}, comprou);
@@ -677,7 +621,6 @@ function Cadastro({ onCadastro }) {
 // ─── DASHBOARD ────────────────────────────────────────────────────────────────
 function Dashboard({ perfil, protocolo, pesosLog, onAddPeso, aguaLog, onToggleAgua, checkLog, toggleCheck, calcScore, calcStreak, pesoIdealReal }) {
   const [newP,setNewP]=useState("");
-  const CAL_KEY=`ic_cal_${perfil.email}_${hoje()}`;
   const [calTreino,setCalTreino]=useState(()=>{try{return parseInt(localStorage.getItem(`ic_cal_${perfil.email}_${hoje()}`)||"0");}catch{return 0;}});
   function salvarCalTreino(v){const n=parseInt(v)||0;setCalTreino(n);localStorage.setItem(`ic_cal_${perfil.email}_${hoje()}`,String(n));}
   const motiv=getDayMotiv();
@@ -706,41 +649,22 @@ function Dashboard({ perfil, protocolo, pesosLog, onAddPeso, aguaLog, onToggleAg
       <div className="dash-grid" style={{marginBottom:18}}>
         <div className="card-accent dc"><div className="dc-label">Peso Atual</div><div className="dc-val">{pesoAtual}kg</div><div className="dc-sub">Meta: {ideal}kg</div></div>
         <div className="card dc">
-          <div className="dc-label">
-            {isMassa
-              ? (parseFloat(perdido)>=0?"Ganho":"Perdido")
-              : (parseFloat(perdido)>=0?"Perdido":"Ganhou")
-            }
-          </div>
-          <div className="dc-val" style={{
-            color: isMassa
-              ? (parseFloat(perdido)>=0?C.purple:"#ff6b6b")
-              : (parseFloat(perdido)>=0?C.accent:"#ff6b6b"),
-            fontSize:32
-          }}>
-            {parseFloat(perdido)<0?"+":""}{Math.abs(parseFloat(perdido)).toFixed(1)}kg
-          </div>
+          <div className="dc-label">{isMassa?(parseFloat(perdido)>=0?"Ganho":"Perdido"):(parseFloat(perdido)>=0?"Perdido":"Ganhou")}</div>
+          <div className="dc-val" style={{color:isMassa?(parseFloat(perdido)>=0?C.purple:"#ff6b6b"):(parseFloat(perdido)>=0?C.accent:"#ff6b6b"),fontSize:32}}>{parseFloat(perdido)<0?"+":""}{Math.abs(parseFloat(perdido)).toFixed(1)}kg</div>
           <div className="dc-sub">Desde o início</div>
         </div>
         <div className="card dc"><div className="dc-label">Falta</div><div className="dc-val" style={{fontSize:32}}>{falta}kg</div><div className="dc-sub">Para o peso ideal</div></div>
         <div className="card dc"><div className="dc-label">IMC Atual</div><div className="dc-val" style={{fontSize:30}}>{imc}</div><div className="dc-sub">{clsIMC(parseFloat(imc))}</div></div>
       </div>
       <div className="card" style={{padding:"18px 20px",marginBottom:18}}><p style={{fontFamily:"'Barlow Condensed'",fontWeight:700,fontSize:15,textTransform:"uppercase",letterSpacing:1,marginBottom:4}}>Progresso na Meta</p><div className="prog-wrap"><div className="prog-fill" style={{width:`${progPct}%`}}/></div><div style={{display:"flex",justifyContent:"space-between",fontSize:12,color:C.muted}}><span>{perfil.peso}kg</span><span style={{color:C.accent,fontWeight:700}}>{progPct}% concluído</span><span>{ideal}kg</span></div></div>
-      
-      {/* ── CALENDÁRIO SEMANAL VISUAL ── */}
       {(()=>{
         const dias7=[];
         for(let i=6;i>=0;i--){
           const d=new Date();d.setDate(d.getDate()-i);
           const str=`${String(d.getDate()).padStart(2,"0")}/${String(d.getMonth()+1).padStart(2,"0")}/${d.getFullYear()}`;
           const nomes=["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"];
-          const chk=checkLog[str]||{};
-          const agua=aguaLog[str]||0;
-          const garrafas=Math.ceil(aguaDia(perfil.peso)/0.5);
-          const treinou=!!chk.treino;
-          const dietou=!!chk.dieta;
-          const hidratou=agua>=garrafas;
-          const isHoje=str===hoje();
+          const chk=checkLog[str]||{};const agua=aguaLog[str]||0;const garrafas=Math.ceil(aguaDia(perfil.peso)/0.5);
+          const treinou=!!chk.treino,dietou=!!chk.dieta,hidratou=agua>=garrafas,isHoje=str===hoje();
           const total=(treinou?1:0)+(dietou?1:0)+(hidratou?1:0);
           dias7.push({str,dia:nomes[d.getDay()],num:d.getDate(),treinou,dietou,hidratou,isHoje,total});
         }
@@ -748,52 +672,33 @@ function Dashboard({ perfil, protocolo, pesosLog, onAddPeso, aguaLog, onToggleAg
           <div className="card" style={{padding:"18px 20px",marginBottom:18}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
               <p style={{fontFamily:"'Barlow Condensed'",fontWeight:700,fontSize:15,textTransform:"uppercase",letterSpacing:1}}>📅 Semana em Revista</p>
-              <div style={{display:"flex",gap:10,fontSize:11,color:C.muted}}>
-                <span>🏋️ Treino</span>
-                <span>🥩 Dieta</span>
-                <span>💧 Água</span>
-              </div>
+              <div style={{display:"flex",gap:10,fontSize:11,color:C.muted}}><span>🏋️ Treino</span><span>🥩 Dieta</span><span>💧 Água</span></div>
             </div>
             <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:6}}>
               {dias7.map(({str,dia,num,treinou,dietou,hidratou,isHoje,total})=>{
                 const cor=total===3?"#22c55e":total===2?C.accent:total===1?"#f59e0b":"#333";
                 const bg=total===3?"rgba(34,197,94,.08)":total===2?"rgba(102,255,240,.06)":total===1?"rgba(245,158,11,.06)":"transparent";
-                return(
-                  <div key={str} style={{
-                    display:"flex",flexDirection:"column",alignItems:"center",gap:4,
-                    padding:"10px 4px",borderRadius:8,
-                    border:`1px solid ${isHoje?cor:"#1a1a1a"}`,
-                    background:isHoje?bg:"transparent",
-                    transition:"all .2s"
-                  }}>
-                    <span style={{fontSize:9,fontWeight:700,letterSpacing:1,textTransform:"uppercase",color:isHoje?C.accent:C.muted}}>{dia}</span>
-                    <span style={{fontFamily:"'Bebas Neue',cursive",fontSize:18,color:isHoje?C.text:"#444",lineHeight:1}}>{num}</span>
-                    <div style={{display:"flex",flexDirection:"column",gap:2,width:"100%",alignItems:"center"}}>
-                      <div style={{width:20,height:4,borderRadius:2,background:treinou?"#22c55e":"#1a1a1a"}}/>
-                      <div style={{width:20,height:4,borderRadius:2,background:dietou?C.accent:"#1a1a1a"}}/>
-                      <div style={{width:20,height:4,borderRadius:2,background:hidratou?"#60a5fa":"#1a1a1a"}}/>
-                    </div>
-                    {total===3&&<span style={{fontSize:10}}>⭐</span>}
+                return(<div key={str} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:4,padding:"10px 4px",borderRadius:8,border:`1px solid ${isHoje?cor:"#1a1a1a"}`,background:isHoje?bg:"transparent",transition:"all .2s"}}>
+                  <span style={{fontSize:9,fontWeight:700,letterSpacing:1,textTransform:"uppercase",color:isHoje?C.accent:C.muted}}>{dia}</span>
+                  <span style={{fontFamily:"'Bebas Neue',cursive",fontSize:18,color:isHoje?C.text:"#444",lineHeight:1}}>{num}</span>
+                  <div style={{display:"flex",flexDirection:"column",gap:2,width:"100%",alignItems:"center"}}>
+                    <div style={{width:20,height:4,borderRadius:2,background:treinou?"#22c55e":"#1a1a1a"}}/>
+                    <div style={{width:20,height:4,borderRadius:2,background:dietou?C.accent:"#1a1a1a"}}/>
+                    <div style={{width:20,height:4,borderRadius:2,background:hidratou?"#60a5fa":"#1a1a1a"}}/>
                   </div>
-                );
+                  {total===3&&<span style={{fontSize:10}}>⭐</span>}
+                </div>);
               })}
             </div>
             <div style={{display:"flex",gap:16,marginTop:12,flexWrap:"wrap"}}>
-              {[{cor:"#22c55e",label:"Verde = dia perfeito (3/3)"},
-                {cor:C.accent,label:"Ciano = 2/3"},
-                {cor:"#f59e0b",label:"Amarelo = 1/3"},
-                {cor:"#333",label:"Cinza = sem registro"},
-              ].map(({cor,label})=>(
-                <div key={label} style={{display:"flex",alignItems:"center",gap:6,fontSize:10,color:C.muted}}>
-                  <div style={{width:8,height:8,borderRadius:"50%",background:cor,flexShrink:0}}/>
-                  {label}
-                </div>
+              {[{cor:"#22c55e",label:"Verde = dia perfeito (3/3)"},{cor:C.accent,label:"Ciano = 2/3"},{cor:"#f59e0b",label:"Amarelo = 1/3"},{cor:"#333",label:"Cinza = sem registro"}].map(({cor,label})=>(
+                <div key={label} style={{display:"flex",alignItems:"center",gap:6,fontSize:10,color:C.muted}}><div style={{width:8,height:8,borderRadius:"50%",background:cor,flexShrink:0}}/>{label}</div>
               ))}
             </div>
           </div>
         );
       })()}
-<div className="card" style={{padding:"18px 20px",marginBottom:18}}><p style={{fontFamily:"'Barlow Condensed'",fontWeight:700,fontSize:15,textTransform:"uppercase",letterSpacing:1,marginBottom:12}}>Evolução do Peso</p>{pesosLog.length>=2?(<div className="chart-wrap"><svg width="100%" height="100%" viewBox={`0 0 ${cW} ${cH+20}`} preserveAspectRatio="none"><defs><linearGradient id="cg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={C.accent} stopOpacity=".25"/><stop offset="100%" stopColor={C.accent} stopOpacity="0"/></linearGradient></defs>{path&&<><path d={`${path} L${cW},${cH} L0,${cH} Z`} fill="url(#cg)"/><path d={path} fill="none" stroke={C.accent} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>{pesosLog.map((p,i)=>{const vals=pesosLog.map(x=>x.val);const mn=Math.min(...vals)-.5,mx=Math.max(...vals)+.5;const x=(i/(vals.length-1||1))*cW;const y=cH-((p.val-mn)/(mx-mn||1))*cH;return(<g key={i}><circle cx={x} cy={y} r="5" fill={C.accent} style={{filter:`drop-shadow(0 0 4px ${C.accent})`}}/><text x={x} y={cH+14} textAnchor="middle" fill={C.muted} fontSize="9" fontFamily="Barlow">{p.data.split("/").slice(0,2).join("/")}</text></g>);})}</>}</svg></div>):(<p style={{color:C.muted,fontSize:13,textAlign:"center",padding:"20px 0"}}>Registre seu peso diariamente para ver a evolução aqui.</p>)}<div className="weight-form"><input type="number" placeholder="Registrar peso de hoje (kg)" value={newP} onChange={e=>setNewP(e.target.value)}/><button onClick={()=>{if(newP){onAddPeso(parseFloat(newP));setNewP("");}}}> + Registrar</button></div></div>
+      <div className="card" style={{padding:"18px 20px",marginBottom:18}}><p style={{fontFamily:"'Barlow Condensed'",fontWeight:700,fontSize:15,textTransform:"uppercase",letterSpacing:1,marginBottom:12}}>Evolução do Peso</p>{pesosLog.length>=2?(<div className="chart-wrap"><svg width="100%" height="100%" viewBox={`0 0 ${cW} ${cH+20}`} preserveAspectRatio="none"><defs><linearGradient id="cg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={C.accent} stopOpacity=".25"/><stop offset="100%" stopColor={C.accent} stopOpacity="0"/></linearGradient></defs>{path&&<><path d={`${path} L${cW},${cH} L0,${cH} Z`} fill="url(#cg)"/><path d={path} fill="none" stroke={C.accent} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>{pesosLog.map((p,i)=>{const vals=pesosLog.map(x=>x.val);const mn=Math.min(...vals)-.5,mx=Math.max(...vals)+.5;const x=(i/(vals.length-1||1))*cW;const y=cH-((p.val-mn)/(mx-mn||1))*cH;return(<g key={i}><circle cx={x} cy={y} r="5" fill={C.accent} style={{filter:`drop-shadow(0 0 4px ${C.accent})`}}/><text x={x} y={cH+14} textAnchor="middle" fill={C.muted} fontSize="9" fontFamily="Barlow">{p.data.split("/").slice(0,2).join("/")}</text></g>);})}</>}</svg></div>):(<p style={{color:C.muted,fontSize:13,textAlign:"center",padding:"20px 0"}}>Registre seu peso diariamente para ver a evolução aqui.</p>)}<div className="weight-form"><input type="number" placeholder="Registrar peso de hoje (kg)" value={newP} onChange={e=>setNewP(e.target.value)}/><button onClick={()=>{if(newP){onAddPeso(parseFloat(newP));setNewP("");}}}> + Registrar</button></div></div>
       {(()=>{
         const score=calcScore(),streak=calcStreak(),dHoje=hoje(),checkHoje=checkLog[dHoje]||{treino:false,dieta:false};
         const nivel=score>=91?"🏆 Elite IRONCUT":score>=71?"⚡ Consistente":score>=41?"📈 Em Progresso":"🌱 Iniciante";
@@ -825,22 +730,15 @@ function Dashboard({ perfil, protocolo, pesosLog, onAddPeso, aguaLog, onToggleAg
       })()}
       <div className="card-accent water-section"><div className="water-header"><div><p className="water-title">💧 Hidratação Diária</p><p className="water-meta">Meta: {litrosNecessarios}L por dia ({garrafas} garrafas de 500ml)</p></div><div style={{textAlign:"right"}}><div className="water-total">{litrosHoje}L / {litrosNecessarios}L</div><div style={{fontSize:11,color:C.muted}}>{aguaPct}% da meta</div></div></div><div className="water-bar-bg"><div className="water-bar-fill" style={{width:`${aguaPct}%`}}/></div><div className="water-bottles">{Array.from({length:garrafas},(_,i)=>(<div key={i} className="bottle" onClick={()=>onToggleAgua(i+1)}><div className={`bottle-icon${aguaHoje>i?" full":""}`}>💧</div><div className="bottle-label">{(i+1)*500}ml</div></div>))}</div>{aguaHoje>=garrafas&&(<p style={{textAlign:"center",marginTop:10,fontSize:13,color:C.accent,fontWeight:700}}>✅ Meta de hidratação atingida hoje!</p>)}</div>
       {protocolo?.kcal&&(<div className="card" style={{padding:"18px 20px",marginTop:18}}><p style={{fontFamily:"'Barlow Condensed'",fontWeight:700,fontSize:15,textTransform:"uppercase",letterSpacing:1,marginBottom:12}}>Distribuição de Macros</p><div className="macro-grid"><div className="card macro-card"><div className="macro-val">{protocolo.kcal}</div><div className="macro-label">kcal/dia</div></div><div className="card macro-card"><div className="macro-val">{protocolo.prot}g</div><div className="macro-label">Proteína</div></div><div className="card macro-card"><div className="macro-val">{protocolo.carb}g</div><div className="macro-label">Carboidrato</div></div></div>{protocolo.dica&&(<div style={{background:"rgba(102,255,240,.05)",border:`1px solid rgba(102,255,240,.15)`,borderRadius:8,padding:"12px 16px",fontSize:13,color:C.lgray}}>💡 <strong style={{color:C.accent}}>Dica IA:</strong> {protocolo.dica}</div>)}</div>)}
-
       {(()=>{
         const tmbVal=tmb(perfil.peso,perfil.altura,perfil.idade,perfil.sexo);
         const fator=ATIVIDADE[perfil.nivelAtividade]||1.55;
         const tdeeVal=Math.round(tmbVal*fator);
         const metaKcal=protocolo?.kcal||(isMassa?tdeeVal+400:tdeeVal-500);
-        // Cálculo correto: TMB + gasto real do relógio - meta da dieta
-        // Se não informou o relógio, usa TDEE como referência
         const gastoTotal=calTreino>0?tmbVal+calTreino:tdeeVal;
         const deficitComTreino=isMassa?metaKcal-gastoTotal:gastoTotal-metaKcal;
-        const corDeficit=isMassa
-          ?(deficitComTreino>=300?"#22c55e":deficitComTreino>=0?"#f59e0b":"#ff6b6b")
-          :(deficitComTreino>=500?"#22c55e":deficitComTreino>=200?"#f59e0b":"#ff6b6b");
-        const labelDeficit=isMassa
-          ?(deficitComTreino>=300?"🔥 Superávit ideal!":deficitComTreino>=0?"⚠️ Superávit baixo":"❌ Déficit — coma mais")
-          :(deficitComTreino>=500?"🔥 Déficit ideal!":deficitComTreino>=200?"⚠️ Déficit moderado":"❌ Déficit insuficiente");
+        const corDeficit=isMassa?(deficitComTreino>=300?"#22c55e":deficitComTreino>=0?"#f59e0b":"#ff6b6b"):(deficitComTreino>=500?"#22c55e":deficitComTreino>=200?"#f59e0b":"#ff6b6b");
+        const labelDeficit=isMassa?(deficitComTreino>=300?"🔥 Superávit ideal!":deficitComTreino>=0?"⚠️ Superávit baixo":"❌ Déficit — coma mais"):(deficitComTreino>=500?"🔥 Déficit ideal!":deficitComTreino>=200?"⚠️ Déficit moderado":"❌ Déficit insuficiente");
         return (
           <div className="card" style={{padding:"20px 22px",marginTop:18,border:"1px solid rgba(102,255,240,.15)"}}>
             <p style={{fontFamily:"'Barlow Condensed'",fontWeight:700,fontSize:15,textTransform:"uppercase",letterSpacing:1,marginBottom:16}}>⚡ Taxa Metabólica & Déficit</p>
@@ -855,7 +753,7 @@ function Dashboard({ perfil, protocolo, pesosLog, onAddPeso, aguaLog, onToggleAg
             </div>
             <div style={{height:1,background:"rgba(255,255,255,.05)",marginBottom:16}}/>
             <p style={{fontSize:11,fontWeight:700,letterSpacing:2,textTransform:"uppercase",color:C.muted,marginBottom:8}}>⌚ Calorias queimadas no treino hoje</p>
-            <p style={{fontSize:11,color:"#444",marginBottom:8,lineHeight:1.5}}>Informe o gasto do seu relógio. O déficit será calculado como <strong style={{color:C.muted}}>TMB + Treino − Dieta</strong>. Sem relógio, usa o TDEE como base.</p>
+            <p style={{fontSize:11,color:"#444",marginBottom:8,lineHeight:1.5}}>Informe o gasto do seu relógio. O déficit será calculado como <strong style={{color:C.muted}}>TMB + Treino − Dieta</strong>.</p>
             <div style={{display:"flex",gap:8,marginBottom:16}}>
               <input type="number" placeholder="Ex: 450 kcal (do seu relógio)" value={calTreino||""} onChange={e=>salvarCalTreino(e.target.value)} style={{flex:1,padding:"10px 14px",background:"#0D0D0D",border:"1px solid #222",borderRadius:7,color:"#fff",fontFamily:"'Barlow',sans-serif",fontSize:14,outline:"none"}} onFocus={e=>e.target.style.borderColor="#66FFF0"} onBlur={e=>e.target.style.borderColor="#222"}/>
               <button onClick={()=>salvarCalTreino(0)} style={{padding:"10px 16px",background:"transparent",border:"1px solid #333",borderRadius:7,color:C.muted,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:12,cursor:"pointer"}}>Limpar</button>
@@ -865,18 +763,7 @@ function Dashboard({ perfil, protocolo, pesosLog, onAddPeso, aguaLog, onToggleAg
                 <span style={{fontSize:11,fontWeight:700,letterSpacing:2,textTransform:"uppercase",color:C.muted}}>{isMassa?"Superávit":"Déficit"} do dia</span>
                 <span style={{fontSize:12,fontWeight:700,color:corDeficit}}>{labelDeficit}</span>
               </div>
-              {calTreino>0?(
-                <>
-                  <div style={{display:"flex",justifyContent:"space-between",fontSize:13,padding:"4px 0",borderBottom:"1px solid rgba(255,255,255,.04)"}}><span style={{color:C.muted}}>TMB</span><span style={{color:C.muted,fontWeight:600}}>{tmbVal} kcal</span></div>
-                  <div style={{display:"flex",justifyContent:"space-between",fontSize:13,padding:"4px 0",borderBottom:"1px solid rgba(255,255,255,.04)"}}><span style={{color:C.muted}}>+ Treino (relógio)</span><span style={{color:"#22c55e",fontWeight:600}}>+{calTreino} kcal</span></div>
-                  <div style={{display:"flex",justifyContent:"space-between",fontSize:13,padding:"4px 0",borderBottom:"1px solid rgba(255,255,255,.04)"}}><span style={{color:C.muted}}>− Meta dieta</span><span style={{color:"#ff6b6b",fontWeight:600}}>−{metaKcal} kcal</span></div>
-                </>
-              ):(
-                <>
-                  <div style={{display:"flex",justifyContent:"space-between",fontSize:13,padding:"4px 0",borderBottom:"1px solid rgba(255,255,255,.04)"}}><span style={{color:C.muted}}>TDEE (sem treino informado)</span><span style={{color:C.muted,fontWeight:600}}>{tdeeVal} kcal</span></div>
-                  <div style={{display:"flex",justifyContent:"space-between",fontSize:13,padding:"4px 0",borderBottom:"1px solid rgba(255,255,255,.04)"}}><span style={{color:C.muted}}>− Meta dieta</span><span style={{color:"#ff6b6b",fontWeight:600}}>−{metaKcal} kcal</span></div>
-                </>
-              )}
+              {calTreino>0?(<><div style={{display:"flex",justifyContent:"space-between",fontSize:13,padding:"4px 0",borderBottom:"1px solid rgba(255,255,255,.04)"}}><span style={{color:C.muted}}>TMB</span><span style={{color:C.muted,fontWeight:600}}>{tmbVal} kcal</span></div><div style={{display:"flex",justifyContent:"space-between",fontSize:13,padding:"4px 0",borderBottom:"1px solid rgba(255,255,255,.04)"}}><span style={{color:C.muted}}>+ Treino (relógio)</span><span style={{color:"#22c55e",fontWeight:600}}>+{calTreino} kcal</span></div><div style={{display:"flex",justifyContent:"space-between",fontSize:13,padding:"4px 0",borderBottom:"1px solid rgba(255,255,255,.04)"}}><span style={{color:C.muted}}>− Meta dieta</span><span style={{color:"#ff6b6b",fontWeight:600}}>−{metaKcal} kcal</span></div></>):(<><div style={{display:"flex",justifyContent:"space-between",fontSize:13,padding:"4px 0",borderBottom:"1px solid rgba(255,255,255,.04)"}}><span style={{color:C.muted}}>TDEE (sem treino informado)</span><span style={{color:C.muted,fontWeight:600}}>{tdeeVal} kcal</span></div><div style={{display:"flex",justifyContent:"space-between",fontSize:13,padding:"4px 0",borderBottom:"1px solid rgba(255,255,255,.04)"}}><span style={{color:C.muted}}>− Meta dieta</span><span style={{color:"#ff6b6b",fontWeight:600}}>−{metaKcal} kcal</span></div></>)}
               <div style={{display:"flex",justifyContent:"space-between",fontSize:15,fontWeight:700,marginTop:10,paddingTop:10,borderTop:"1px solid rgba(255,255,255,.08)"}}>
                 <span style={{color:C.text}}>{isMassa?"= Superávit real":"= Déficit real"}</span>
                 <span style={{color:corDeficit,fontFamily:"'Bebas Neue',cursive",fontSize:22}}>{deficitComTreino>0?"+":""}{deficitComTreino} kcal</span>
@@ -903,12 +790,10 @@ function Treinos({ protocolo, perfil, onUpdateProtocolo }) {
     const dado=cargas[key]||{carga:"",historico:[]};
     const hist=dado.historico;
     if(hist.length<3)return null;
-    // Pega as últimas 3 entradas
     const ultimas3=hist.slice(-3).map(h=>parseFloat(h)||0);
     const todasIguais=ultimas3.every(v=>v===ultimas3[0]&&v>0);
     if(!todasIguais)return null;
     const cargaAtual=ultimas3[0];
-    // Sugere aumento: 2.5kg para cargas até 20kg, 5kg para acima
     const aumento=cargaAtual<=20?2.5:5;
     return{cargaAtual,sugerida:cargaAtual+aumento,aumento};
   }
@@ -931,227 +816,69 @@ function Treinos({ protocolo, perfil, onUpdateProtocolo }) {
       <div className="sec-label">Protocolo de Treinos</div>
       <p className="sec-title">TREINOS {perfil.objetivo==="massa"?"HIPERTROFIA":"IRONCUT"}</p>
       <div className="week-grid">{dias.map(([dia,info])=>(<div key={dia} className="card wcard"><div className="wcard-n">{dia}</div><div className="wcard-name">{info.nome}</div><div className="wcard-desc">{info.ex.length} exercícios</div></div>))}</div>
-      {dias.map(([dia,info])=>(<div key={dia} style={{marginBottom:16}}><p style={{fontFamily:"'Barlow Condensed'",fontWeight:700,fontSize:15,textTransform:"uppercase",letterSpacing:1,marginBottom:8,color:C.accent}}>{dia} — {info.nome}</p><div className="treino-list card">{info.ex.map(([nome,sets],i)=>{const key=`${dia}-${i}`;const dadoCarga=cargas[key]||{carga:"",historico:[]};return(<div key={i}><div className="treino-item"><div className="treino-num">{String(i+1).padStart(2,"0")}</div><div className="treino-name">{nome}</div><div className="treino-sets">{sets}</div></div>{(()=>{
-                  const prog=sugestaoProgressao(key);
-                  return(
-                    <>
-                      <div className="carga-row">
-                        <span className="carga-label">Carga:</span>
-                        <input className="carga-input" type="number" placeholder="0" value={dadoCarga.carga} onChange={e=>{const novo={...cargas,[key]:{...dadoCarga,carga:e.target.value}};setCargas(novo);localStorage.setItem(CARGA_KEY,JSON.stringify(novo));}} onBlur={e=>salvarCarga(dia,i,e.target.value)}/>
-                        <span className="carga-unit">kg</span>
-                        {dadoCarga.historico.length>1&&(<div className="carga-hist"><span style={{fontSize:10,color:"#444",marginRight:2}}>Histórico:</span>{dadoCarga.historico.slice(0,-1).slice(-3).map((h,j)=>(<span key={j} className="carga-hist-item">{h}kg</span>))}</div>)}
-                      </div>
-                      {prog&&(
-                        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"8px 18px 10px",background:"rgba(34,197,94,.06)",borderBottom:`1px solid ${C.border}`}}>
-                          <div style={{display:"flex",alignItems:"center",gap:8}}>
-                            <span style={{fontSize:14}}>⬆️</span>
-                            <div>
-                              <span style={{fontSize:11,fontWeight:700,color:"#22c55e",letterSpacing:1}}>HORA DE EVOLUIR!</span>
-                              <span style={{fontSize:11,color:"#666",marginLeft:6}}>Mesma carga por 3x seguidas</span>
-                            </div>
-                          </div>
-                          <button
-                            onClick={()=>{
-                              const novoVal=String(prog.sugerida);
-                              const novo={...cargas,[key]:{...dadoCarga,carga:novoVal}};
-                              setCargas(novo);
-                              localStorage.setItem(CARGA_KEY,JSON.stringify(novo));
-                            }}
-                            style={{
-                              padding:"4px 12px",background:"#22c55e",color:"#000",
-                              border:"none",borderRadius:5,fontFamily:"'Barlow Condensed',sans-serif",
-                              fontWeight:800,fontSize:12,letterSpacing:1,cursor:"pointer",
-                              whiteSpace:"nowrap"
-                            }}
-                          >
-                            +{prog.aumento}kg → {prog.sugerida}kg
-                          </button>
-                        </div>
-                      )}
-                    </>
-                  );
-                })()}</div>);})}</div></div>))}
+      {dias.map(([dia,info])=>(<div key={dia} style={{marginBottom:16}}><p style={{fontFamily:"'Barlow Condensed'",fontWeight:700,fontSize:15,textTransform:"uppercase",letterSpacing:1,marginBottom:8,color:C.accent}}>{dia} — {info.nome}</p><div className="treino-list card">{info.ex.map(([nome,sets],i)=>{const key=`${dia}-${i}`;const dadoCarga=cargas[key]||{carga:"",historico:[]};return(<div key={i}><div className="treino-item"><div className="treino-num">{String(i+1).padStart(2,"0")}</div><div className="treino-name">{nome}</div><div className="treino-sets">{sets}</div></div>{(()=>{const prog=sugestaoProgressao(key);return(<><div className="carga-row"><span className="carga-label">Carga:</span><input className="carga-input" type="number" placeholder="0" value={dadoCarga.carga} onChange={e=>{const novo={...cargas,[key]:{...dadoCarga,carga:e.target.value}};setCargas(novo);localStorage.setItem(CARGA_KEY,JSON.stringify(novo));}} onBlur={e=>salvarCarga(dia,i,e.target.value)}/><span className="carga-unit">kg</span>{dadoCarga.historico.length>1&&(<div className="carga-hist"><span style={{fontSize:10,color:"#444",marginRight:2}}>Histórico:</span>{dadoCarga.historico.slice(0,-1).slice(-3).map((h,j)=>(<span key={j} className="carga-hist-item">{h}kg</span>))}</div>)}</div>{prog&&(<div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"8px 18px 10px",background:"rgba(34,197,94,.06)",borderBottom:`1px solid ${C.border}`}}><div style={{display:"flex",alignItems:"center",gap:8}}><span style={{fontSize:14}}>⬆️</span><div><span style={{fontSize:11,fontWeight:700,color:"#22c55e",letterSpacing:1}}>HORA DE EVOLUIR!</span><span style={{fontSize:11,color:"#666",marginLeft:6}}>Mesma carga por 3x seguidas</span></div></div><button onClick={()=>{const novoVal=String(prog.sugerida);const novo={...cargas,[key]:{...dadoCarga,carga:novoVal}};setCargas(novo);localStorage.setItem(CARGA_KEY,JSON.stringify(novo));}} style={{padding:"4px 12px",background:"#22c55e",color:"#000",border:"none",borderRadius:5,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,fontSize:12,letterSpacing:1,cursor:"pointer",whiteSpace:"nowrap"}}>+{prog.aumento}kg → {prog.sugerida}kg</button></div>)}</>);})()}</div>);})}</div></div>))}
       <div className="card ia-section"><div className="ia-header"><div className="ia-dot"/><p className="ia-title">Personal IA</p><p className="ia-sub">Substitua exercícios e personalize seu treino</p></div><div className="chat-msgs">{msgs.map((m,i)=>(m.text==="typing"?<div key={i} className="cmsg ai typing"><span/><span/><span/></div>:<div key={i} className={`cmsg ${m.isUpdate?"update":m.role}`}>{m.text}</div>))}</div><div className="chips">{quickChips.map(c=><div key={c} className="chip" onClick={()=>send(c)}>{c}</div>)}</div><div className="chat-input-row"><input className="chat-input" placeholder="Ex: Não gosto de agachamento, o que posso substituir?" value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>e.key==="Enter"&&send()}/><button className="chat-send" onClick={()=>send()} disabled={load}>Enviar</button></div></div>
     </div>
   );
 }
 
 // ─── DIETA ────────────────────────────────────────────────────────────────────
-// SUBSTITUA toda a função Dieta por esta versão atualizada
-
 function Dieta({ protocolo, perfil, onUpdateProtocolo }) {
   const [msgs,setMsgs]=useState([{role:"ai",text:`Olá ${perfil.nome.split(" ")[0]}! Sou sua Nutricionista IA 🥗 Posso substituir alimentos e o cardápio será ATUALIZADO automaticamente!`}]);
   const [input,setInput]=useState(""); const [load,setLoad]=useState(false);
   const [showLista, setShowLista]=useState(false);
 
-  // ── GERAR PDF DA DIETA ─────────────────────────────────────────────────────
   function gerarPDF() {
     const isMassa = perfil.objetivo === "massa";
     const tipoDieta = isMassa ? "BULKING" : "CUTTING";
-
-    const html = `
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-<meta charset="UTF-8">
-<title>Dieta IRONCUT — ${perfil.nome}</title>
-<style>
-  * { box-sizing:border-box; margin:0; padding:0; }
-  body { font-family: Arial, sans-serif; background: #fff; color: #111; padding: 32px; }
-  .header { text-align:center; border-bottom: 3px solid #00D4C8; padding-bottom: 20px; margin-bottom: 24px; }
-  .logo { font-size: 32px; font-weight: 900; letter-spacing: 6px; color: #111; }
-  .logo span { color: #00D4C8; }
-  .subtitle { font-size: 11px; letter-spacing: 3px; text-transform: uppercase; color: #999; margin-top: 4px; }
-  .tipo { display: inline-block; background: #00D4C8; color: #000; font-size: 12px; font-weight: 700; letter-spacing: 2px; padding: 4px 16px; text-transform: uppercase; margin-top: 10px; }
-  .info-row { display: flex; justify-content: space-between; background: #f5f5f5; padding: 12px 20px; margin-bottom: 24px; border-left: 4px solid #00D4C8; }
-  .info-item { text-align: center; }
-  .info-val { font-size: 22px; font-weight: 900; color: #00D4C8; }
-  .info-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: #999; }
-  .section-title { font-size: 10px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; color: #999; margin-bottom: 12px; }
-  .meal { margin-bottom: 16px; border: 1px solid #eee; page-break-inside: avoid; }
-  .meal-head { background: #f9f9f9; border-bottom: 1px solid #eee; padding: 10px 16px; display: flex; align-items: center; gap: 12px; }
-  .meal-time { font-size: 11px; font-weight: 700; letter-spacing: 2px; color: #00D4C8; }
-  .meal-name { font-size: 14px; font-weight: 700; text-transform: uppercase; }
-  .meal-body { padding: 10px 16px; }
-  .meal-item { font-size: 13px; color: #444; padding: 3px 0; display: flex; gap: 8px; align-items: flex-start; }
-  .meal-item::before { content: "—"; color: #00D4C8; flex-shrink: 0; font-size: 10px; margin-top: 2px; }
-  .supl { margin-top: 20px; }
-  .supl-item { display: flex; gap: 8px; font-size: 13px; color: #444; padding: 6px 0; border-bottom: 1px solid #f0f0f0; }
-  .supl-item::before { content: "💊"; flex-shrink:0; }
-  .footer { margin-top: 32px; padding-top: 16px; border-top: 1px solid #eee; text-align: center; font-size: 11px; color: #bbb; letter-spacing: 1px; }
-  @media print { body { padding: 16px; } }
-</style>
-</head>
-<body>
-  <div class="header">
-    <div class="logo"><span>IRON</span>CUT</div>
-    <div class="subtitle">Protocolo de Transformação Corporal com IA</div>
-    <div class="tipo">Dieta ${tipoDieta}</div>
-  </div>
-
-  <div class="info-row">
-    <div class="info-item"><div class="info-val">${protocolo.kcal}</div><div class="info-label">Kcal / Dia</div></div>
-    <div class="info-item"><div class="info-val">${protocolo.prot}g</div><div class="info-label">Proteína</div></div>
-    <div class="info-item"><div class="info-val">${protocolo.carb}g</div><div class="info-label">Carboidrato</div></div>
-    <div class="info-item"><div class="info-val">${protocolo.gord}g</div><div class="info-label">Gordura</div></div>
-    <div class="info-item"><div class="info-val">${perfil.nome.split(" ")[0]}</div><div class="info-label">Aluno</div></div>
-  </div>
-
-  <div class="section-title">Plano Alimentar Diário</div>
-
-  ${(protocolo.refeicoes||[]).map(ref => `
-  <div class="meal">
-    <div class="meal-head">
-      <div class="meal-time">${ref.h}</div>
-      <div class="meal-name">${ref.n}</div>
-    </div>
-    <div class="meal-body">
-      ${ref.it.map(it => `<div class="meal-item">${it}</div>`).join("")}
-    </div>
-  </div>`).join("")}
-
-  ${protocolo.suplementos?.length ? `
-  <div class="supl">
-    <div class="section-title" style="margin-top:20px">Suplementação</div>
-    ${protocolo.suplementos.map(s => `<div class="supl-item">${s}</div>`).join("")}
-  </div>` : ""}
-
-  <div class="footer">
-    IRONCUT 21D — Gerado em ${new Date().toLocaleDateString("pt-BR")} • appironcut.com
-  </div>
-</body>
-</html>`;
-
+    const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Dieta IRONCUT — ${perfil.nome}</title><style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:Arial,sans-serif;background:#fff;color:#111;padding:32px}.header{text-align:center;border-bottom:3px solid #00D4C8;padding-bottom:20px;margin-bottom:24px}.logo{font-size:32px;font-weight:900;letter-spacing:6px;color:#111}.logo span{color:#00D4C8}.subtitle{font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#999;margin-top:4px}.tipo{display:inline-block;background:#00D4C8;color:#000;font-size:12px;font-weight:700;letter-spacing:2px;padding:4px 16px;text-transform:uppercase;margin-top:10px}.info-row{display:flex;justify-content:space-between;background:#f5f5f5;padding:12px 20px;margin-bottom:24px;border-left:4px solid #00D4C8}.info-item{text-align:center}.info-val{font-size:22px;font-weight:900;color:#00D4C8}.info-label{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:#999}.section-title{font-size:10px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#999;margin-bottom:12px}.meal{margin-bottom:16px;border:1px solid #eee;page-break-inside:avoid}.meal-head{background:#f9f9f9;border-bottom:1px solid #eee;padding:10px 16px;display:flex;align-items:center;gap:12px}.meal-time{font-size:11px;font-weight:700;letter-spacing:2px;color:#00D4C8}.meal-name{font-size:14px;font-weight:700;text-transform:uppercase}.meal-body{padding:10px 16px}.meal-item{font-size:13px;color:#444;padding:3px 0;display:flex;gap:8px;align-items:flex-start}.meal-item::before{content:"—";color:#00D4C8;flex-shrink:0;font-size:10px;margin-top:2px}.supl{margin-top:20px}.supl-item{display:flex;gap:8px;font-size:13px;color:#444;padding:6px 0;border-bottom:1px solid #f0f0f0}.supl-item::before{content:"💊";flex-shrink:0}.footer{margin-top:32px;padding-top:16px;border-top:1px solid #eee;text-align:center;font-size:11px;color:#bbb;letter-spacing:1px}@media print{body{padding:16px}}</style></head><body><div class="header"><div class="logo"><span>IRON</span>CUT</div><div class="subtitle">Protocolo de Transformação Corporal com IA</div><div class="tipo">Dieta ${tipoDieta}</div></div><div class="info-row"><div class="info-item"><div class="info-val">${protocolo.kcal}</div><div class="info-label">Kcal / Dia</div></div><div class="info-item"><div class="info-val">${protocolo.prot}g</div><div class="info-label">Proteína</div></div><div class="info-item"><div class="info-val">${protocolo.carb}g</div><div class="info-label">Carboidrato</div></div><div class="info-item"><div class="info-val">${protocolo.gord}g</div><div class="info-label">Gordura</div></div><div class="info-item"><div class="info-val">${perfil.nome.split(" ")[0]}</div><div class="info-label">Aluno</div></div></div><div class="section-title">Plano Alimentar Diário</div>${(protocolo.refeicoes||[]).map(ref=>`<div class="meal"><div class="meal-head"><div class="meal-time">${ref.h}</div><div class="meal-name">${ref.n}</div></div><div class="meal-body">${ref.it.map(it=>`<div class="meal-item">${it}</div>`).join("")}</div></div>`).join("")}${protocolo.suplementos?.length?`<div class="supl"><div class="section-title" style="margin-top:20px">Suplementação</div>${protocolo.suplementos.map(s=>`<div class="supl-item">${s}</div>`).join("")}</div>`:""}<div class="footer">IRONCUT 21D — Gerado em ${new Date().toLocaleDateString("pt-BR")} • appironcut.com</div></body></html>`;
     const blob = new Blob([html], { type: "text/html;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const win = window.open(url, "_blank");
-    if (win) {
-      win.onload = () => {
-        setTimeout(() => { win.print(); }, 500);
-      };
-    }
+    if (win) { win.onload = () => { setTimeout(() => { win.print(); }, 500); }; }
   }
 
-  // ── GERAR LISTA DE COMPRAS SEMANAL ────────────────────────────────────────
   function gerarListaCompras() {
     if (!protocolo?.refeicoes) return {};
-
-    // Extrai todos os itens de todas as refeições
     const todosItens = protocolo.refeicoes.flatMap(ref => ref.it);
-
-    // Parser para extrair quantidade e item
     function parsearItem(texto) {
-      // Padrões: "200g frango", "3 ovos", "1 banana", "40g aveia", "½ abacate"
       const match = texto.match(/^([\d½¼¾,.]+\s*(?:g|kg|ml|l|col|dose|fatia|fatias|xícara|xícaras|porção)?\s*(?:de\s*)?)/i);
       const qtd = match ? match[1].trim() : "1x";
       const nome = texto.replace(/^[\d½¼¾,.]+\s*(?:g|kg|ml|l|col\.?|dose|fatia|fatias|xícara|xícaras|porção)?\s*(?:de\s*)?/i, "").trim();
       return { qtd, nome: nome || texto };
     }
-
-    // Agrupa por categoria
-    const categorias = {
-      "🥩 Proteínas": [],
-      "🍚 Carboidratos": [],
-      "🥗 Vegetais e Frutas": [],
-      "🥛 Laticínios e Ovos": [],
-      "🫒 Gorduras e Temperos": [],
-      "💊 Suplementos": [],
-      "☕ Bebidas": [],
-      "📦 Outros": [],
-    };
-
+    const categorias = {"🥩 Proteínas":[],"🍚 Carboidratos":[],"🥗 Vegetais e Frutas":[],"🥛 Laticínios e Ovos":[],"🫒 Gorduras e Temperos":[],"💊 Suplementos":[],"☕ Bebidas":[],"📦 Outros":[]};
     function categorizar(texto) {
       const t = texto.toLowerCase();
-      if (/(frango|carne|atum|salmão|peixe|whey|proteína|ovo|peito)/i.test(t)) return "🥩 Proteínas";
-      if (/(arroz|batata|pão|aveia|macarrão|mandioca|feijão|lentilha|carboidrato|granola|mel)/i.test(t)) return "🍚 Carboidratos";
-      if (/(banana|maçã|fruta|salada|brócolis|legume|tomate|alface|espinafre|pepino|vegetal|verdura|iogurte)/i.test(t)) return "🥗 Vegetais e Frutas";
-      if (/(iogurte|leite|queijo|ovo|requeijão)/i.test(t)) return "🥛 Laticínios e Ovos";
-      if (/(azeite|castanha|amendoim|abacate|pasta|óleo|gordura)/i.test(t)) return "🫒 Gorduras e Temperos";
-      if (/(creatina|whey|suplemento|vitamina|cafeína|dose|ômega)/i.test(t)) return "💊 Suplementos";
-      if (/(café|chá|água|suco)/i.test(t)) return "☕ Bebidas";
-      return "📦 Outros";
+      if(/(frango|carne|atum|salmão|peixe|whey|proteína|ovo|peito)/i.test(t))return"🥩 Proteínas";
+      if(/(arroz|batata|pão|aveia|macarrão|mandioca|feijão|lentilha|carboidrato|granola|mel)/i.test(t))return"🍚 Carboidratos";
+      if(/(banana|maçã|fruta|salada|brócolis|legume|tomate|alface|espinafre|pepino|vegetal|verdura|iogurte)/i.test(t))return"🥗 Vegetais e Frutas";
+      if(/(iogurte|leite|queijo|ovo|requeijão)/i.test(t))return"🥛 Laticínios e Ovos";
+      if(/(azeite|castanha|amendoim|abacate|pasta|óleo|gordura)/i.test(t))return"🫒 Gorduras e Temperos";
+      if(/(creatina|whey|suplemento|vitamina|cafeína|dose|ômega)/i.test(t))return"💊 Suplementos";
+      if(/(café|chá|água|suco)/i.test(t))return"☕ Bebidas";
+      return"📦 Outros";
     }
-
-    // Agrupa itens iguais e multiplica por 7
     const agrupado = {};
     todosItens.forEach(item => {
       const { qtd, nome } = parsearItem(item);
       const chave = nome.toLowerCase().trim();
-      if (!agrupado[chave]) {
-        agrupado[chave] = { nome, qtd, count: 0, categoria: categorizar(item) };
-      }
+      if (!agrupado[chave]) { agrupado[chave] = { nome, qtd, count: 0, categoria: categorizar(item) }; }
       agrupado[chave].count++;
     });
-
-    // Organiza por categoria com quantidade semanal
     Object.values(agrupado).forEach(({ nome, qtd, count, categoria }) => {
-      // Extrai número da quantidade para multiplicar
       const numMatch = qtd.match(/[\d.]+/);
       const unidadeMatch = qtd.match(/[a-zA-ZgGkKmMlLç½¼¾]+/g);
       const unidade = unidadeMatch ? unidadeMatch.join("") : "x";
-
       let qtdSemanal;
-      if (numMatch) {
-        const num = parseFloat(numMatch[0]);
-        const total = (num * count * 7).toFixed(0);
-        qtdSemanal = `${total}${unidade}`;
-      } else {
-        qtdSemanal = `${count * 7}x`;
-      }
-
+      if (numMatch) { const num = parseFloat(numMatch[0]); const total = (num * count * 7).toFixed(0); qtdSemanal = `${total}${unidade}`; }
+      else { qtdSemanal = `${count * 7}x`; }
       if (categorias[categoria]) {
-        // Evita duplicatas
         const jaExiste = categorias[categoria].find(i => i.nome.toLowerCase() === nome.toLowerCase());
-        if (!jaExiste) {
-          categorias[categoria].push({ nome, qtd: qtdSemanal });
-        }
+        if (!jaExiste) { categorias[categoria].push({ nome, qtd: qtdSemanal }); }
       }
     });
-
-    // Remove categorias vazias
-    return Object.fromEntries(
-      Object.entries(categorias).filter(([, itens]) => itens.length > 0)
-    );
+    return Object.fromEntries(Object.entries(categorias).filter(([, itens]) => itens.length > 0));
   }
 
   async function send(msg){
@@ -1166,121 +893,19 @@ function Dieta({ protocolo, perfil, onUpdateProtocolo }) {
   }
 
   const quickChips=["Não gosto de ovo de manhã, o que substituir?","Opção vegetariana para o almoço","Substitua frango por outra proteína","Não tenho batata-doce, alternativas?","Lanche rápido sem precisar cozinhar","O que comer pré-treino em 5 minutos?"];
-
   const lista = showLista ? gerarListaCompras() : {};
 
   return(
     <div>
       <div className="sec-label">Plano Alimentar</div>
-
-      {/* TÍTULO + BOTÕES */}
       <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:20,gap:12,flexWrap:"wrap"}}>
-        <p style={{fontFamily:"'Bebas Neue',cursive",fontSize:34,letterSpacing:1,margin:0}}>
-          DIETA {perfil.objetivo==="massa"?"BULKING":"CUTTING"}
-        </p>
+        <p style={{fontFamily:"'Bebas Neue',cursive",fontSize:34,letterSpacing:1,margin:0}}>DIETA {perfil.objetivo==="massa"?"BULKING":"CUTTING"}</p>
         <div style={{display:"flex",gap:8,flexShrink:0}}>
-          <button
-            onClick={gerarPDF}
-            style={{
-              display:"flex",alignItems:"center",gap:6,
-              padding:"8px 14px",background:"transparent",
-              border:`1px solid rgba(102,255,240,.3)`,borderRadius:7,
-              color:"#66FFF0",fontFamily:"'Barlow Condensed',sans-serif",
-              fontWeight:700,fontSize:12,letterSpacing:1.5,
-              textTransform:"uppercase",cursor:"pointer",
-              transition:"all .2s",whiteSpace:"nowrap"
-            }}
-            onMouseOver={e=>e.currentTarget.style.background="rgba(102,255,240,.08)"}
-            onMouseOut={e=>e.currentTarget.style.background="transparent"}
-          >
-            📄 Exportar PDF
-          </button>
-          <button
-            onClick={()=>setShowLista(s=>!s)}
-            style={{
-              display:"flex",alignItems:"center",gap:6,
-              padding:"8px 14px",
-              background:showLista?"rgba(102,255,240,.15)":"transparent",
-              border:`1px solid ${showLista?"rgba(102,255,240,.5)":"rgba(102,255,240,.3)"}`,
-              borderRadius:7,color:"#66FFF0",
-              fontFamily:"'Barlow Condensed',sans-serif",
-              fontWeight:700,fontSize:12,letterSpacing:1.5,
-              textTransform:"uppercase",cursor:"pointer",
-              transition:"all .2s",whiteSpace:"nowrap"
-            }}
-          >
-            🛒 Lista de Compras
-          </button>
+          <button onClick={gerarPDF} style={{display:"flex",alignItems:"center",gap:6,padding:"8px 14px",background:"transparent",border:`1px solid rgba(102,255,240,.3)`,borderRadius:7,color:"#66FFF0",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:12,letterSpacing:1.5,textTransform:"uppercase",cursor:"pointer",transition:"all .2s",whiteSpace:"nowrap"}} onMouseOver={e=>e.currentTarget.style.background="rgba(102,255,240,.08)"} onMouseOut={e=>e.currentTarget.style.background="transparent"}>📄 Exportar PDF</button>
+          <button onClick={()=>setShowLista(s=>!s)} style={{display:"flex",alignItems:"center",gap:6,padding:"8px 14px",background:showLista?"rgba(102,255,240,.15)":"transparent",border:`1px solid ${showLista?"rgba(102,255,240,.5)":"rgba(102,255,240,.3)"}`,borderRadius:7,color:"#66FFF0",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:12,letterSpacing:1.5,textTransform:"uppercase",cursor:"pointer",transition:"all .2s",whiteSpace:"nowrap"}}>🛒 Lista de Compras</button>
         </div>
       </div>
-
-      {/* LISTA DE COMPRAS SEMANAL */}
-      {showLista && (
-        <div style={{
-          background:"#0F0F0F",border:"1px solid rgba(102,255,240,.2)",
-          borderRadius:12,padding:"20px 24px",marginBottom:20,
-          animation:"fadeUp .3s ease"
-        }}>
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
-            <div>
-              <p style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,letterSpacing:2,color:"#66FFF0"}}>
-                🛒 LISTA DE COMPRAS — 7 DIAS
-              </p>
-              <p style={{fontSize:11,color:"#666",marginTop:2}}>
-                Quantidades calculadas para uma semana completa
-              </p>
-            </div>
-            <button
-              onClick={()=>{
-                // Copia para clipboard
-                const texto = Object.entries(lista).map(([cat, itens]) =>
-                  `${cat}\n${itens.map(i => `  • ${i.qtd} ${i.nome}`).join("\n")}`
-                ).join("\n\n");
-                navigator.clipboard.writeText(texto).then(()=>alert("Lista copiada! 📋"));
-              }}
-              style={{
-                padding:"6px 14px",background:"transparent",
-                border:"1px solid #333",borderRadius:6,
-                color:"#666",fontFamily:"'Barlow Condensed',sans-serif",
-                fontWeight:700,fontSize:11,letterSpacing:1,
-                textTransform:"uppercase",cursor:"pointer"
-              }}
-            >
-              📋 Copiar
-            </button>
-          </div>
-
-          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(240px,1fr))",gap:12}}>
-            {Object.entries(lista).map(([categoria, itens]) => (
-              <div key={categoria} style={{
-                background:"rgba(255,255,255,.02)",border:"1px solid #1a1a1a",
-                borderRadius:8,padding:"14px 16px"
-              }}>
-                <p style={{
-                  fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,
-                  fontSize:12,textTransform:"uppercase",letterSpacing:1,
-                  color:"#888",marginBottom:10
-                }}>{categoria}</p>
-                {itens.map((item, i) => (
-                  <div key={i} style={{
-                    display:"flex",justifyContent:"space-between",alignItems:"center",
-                    padding:"5px 0",borderBottom:"1px solid rgba(255,255,255,.04)",
-                    fontSize:13
-                  }}>
-                    <span style={{color:"#ccc"}}>{item.nome}</span>
-                    <span style={{
-                      color:"#66FFF0",fontWeight:700,fontSize:12,
-                      background:"rgba(102,255,240,.08)",padding:"2px 8px",
-                      borderRadius:4,whiteSpace:"nowrap",marginLeft:8
-                    }}>{item.qtd}</span>
-                  </div>
-                ))}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
+      {showLista&&(<div style={{background:"#0F0F0F",border:"1px solid rgba(102,255,240,.2)",borderRadius:12,padding:"20px 24px",marginBottom:20,animation:"fadeUp .3s ease"}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}><div><p style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,letterSpacing:2,color:"#66FFF0"}}>🛒 LISTA DE COMPRAS — 7 DIAS</p><p style={{fontSize:11,color:"#666",marginTop:2}}>Quantidades calculadas para uma semana completa</p></div><button onClick={()=>{const texto=Object.entries(lista).map(([cat,itens])=>`${cat}\n${itens.map(i=>`  • ${i.qtd} ${i.nome}`).join("\n")}`).join("\n\n");navigator.clipboard.writeText(texto).then(()=>alert("Lista copiada! 📋"));}} style={{padding:"6px 14px",background:"transparent",border:"1px solid #333",borderRadius:6,color:"#666",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:11,letterSpacing:1,textTransform:"uppercase",cursor:"pointer"}}>📋 Copiar</button></div><div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(240px,1fr))",gap:12}}>{Object.entries(lista).map(([categoria,itens])=>(<div key={categoria} style={{background:"rgba(255,255,255,.02)",border:"1px solid #1a1a1a",borderRadius:8,padding:"14px 16px"}}><p style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:12,textTransform:"uppercase",letterSpacing:1,color:"#888",marginBottom:10}}>{categoria}</p>{itens.map((item,i)=>(<div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"5px 0",borderBottom:"1px solid rgba(255,255,255,.04)",fontSize:13}}><span style={{color:"#ccc"}}>{item.nome}</span><span style={{color:"#66FFF0",fontWeight:700,fontSize:12,background:"rgba(102,255,240,.08)",padding:"2px 8px",borderRadius:4,whiteSpace:"nowrap",marginLeft:8}}>{item.qtd}</span></div>))}</div>))}</div></div>)}
       {protocolo?.kcal&&(<div className="macro-grid" style={{marginBottom:18}}><div className="card macro-card"><div className="macro-val">{protocolo.kcal}</div><div style={{fontSize:11,color:"#66FFF0",letterSpacing:1,textTransform:"uppercase",marginTop:2}}>kcal/dia</div><div className="macro-label">Calorias</div></div><div className="card macro-card"><div className="macro-val">{protocolo.prot}<span style={{fontSize:14,color:"#666"}}> g</span></div><div style={{fontSize:11,color:"#66FFF0",letterSpacing:1,textTransform:"uppercase",marginTop:2}}>por dia</div><div className="macro-label">Proteína</div></div><div className="card macro-card"><div className="macro-val">{protocolo.carb}<span style={{fontSize:14,color:"#666"}}> g</span></div><div style={{fontSize:11,color:"#66FFF0",letterSpacing:1,textTransform:"uppercase",marginTop:2}}>por dia</div><div className="macro-label">Carboidrato</div></div></div>)}
       {protocolo?.refeicoes&&(<div className="meal-grid">{protocolo.refeicoes.map((ref,i)=>(<div key={i} className="card meal-card"><div className="meal-head"><div className="meal-time">{ref.h}</div><div className="meal-name">{ref.n}</div></div><div className="meal-body">{ref.it.map((it,j)=><div key={j} className="meal-item">{it}</div>)}</div></div>))}</div>)}
       {protocolo?.suplementos&&(<div className="card" style={{padding:"18px 20px",marginBottom:18}}><p style={{fontFamily:"'Barlow Condensed'",fontWeight:700,fontSize:15,textTransform:"uppercase",letterSpacing:1,marginBottom:12}}>Suplementação</p>{protocolo.suplementos.map((s,i)=>(<div key={i} style={{display:"flex",alignItems:"center",gap:10,padding:"9px 0",borderBottom:`1px solid #202020`,fontSize:13}}><span style={{color:"#66FFF0"}}>💊</span><span style={{color:"#BBBBBB"}}>{s}</span></div>))}</div>)}
@@ -1288,7 +913,6 @@ function Dieta({ protocolo, perfil, onUpdateProtocolo }) {
     </div>
   );
 }
-
 
 // ─── PERFIL ───────────────────────────────────────────────────────────────────
 function Perfil({ perfil, onLogout, onRefazerProtocolo }) {
@@ -1300,7 +924,6 @@ function Perfil({ perfil, onLogout, onRefazerProtocolo }) {
   const ideal=pesoIdeal(perfil.altura,perfil.sexo);
   const imc=calcIMC(perfil.peso,perfil.altura);
   const rows=[["Nome",perfil.nome],["E-mail",perfil.email],["Sexo",perfil.sexo.charAt(0).toUpperCase()+perfil.sexo.slice(1)],["Idade",`${perfil.idade} anos`],["Altura",`${perfil.altura}cm`],["Peso Inicial",`${perfil.peso}kg`],["IMC Inicial",`${imc} — ${clsIMC(parseFloat(imc))}`],["Peso Ideal",`${ideal}kg`],["Nível de Atividade",perfil.nivelAtividade],["Local de Treino",perfil.localTreino]];
-
   return(
     <div>
       <div className="sec-label">Meu Perfil</div>
@@ -1346,12 +969,7 @@ function Esporte({ perfil }) {
       <div className="sec-label">Performance Esportiva</div>
       <p className="sec-title">MÓDULO <span style={{color:C.accent}}>ESPORTE</span></p>
       {!esporte?(<div className="card-accent" style={{padding:"28px",marginBottom:20,textAlign:"center"}}><div style={{fontSize:52,marginBottom:12}}>🏆</div><p style={{fontFamily:"'Bebas Neue'",fontSize:22,letterSpacing:2,marginBottom:8}}>Nenhum esporte cadastrado</p><p style={{color:C.muted,fontSize:13,lineHeight:1.6}}>Vá em <strong style={{color:C.accent}}>Perfil → Refazer Protocolo</strong> e selecione seu esporte.</p></div>):(
-        <>{
-          <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:20,padding:"16px 20px",background:C.card,border:`1px solid rgba(102,255,240,.2)`,borderRadius:12}}>
-            <div style={{fontSize:40}}>{emojis[esporte]||"🏆"}</div>
-            <div><p style={{fontFamily:"'Bebas Neue'",fontSize:24,letterSpacing:2,color:C.accent}}>{esporte}</p><p style={{fontSize:12,color:C.muted}}>Protocolo de performance ativo</p></div>
-          </div>
-        }
+        <><div style={{display:"flex",alignItems:"center",gap:12,marginBottom:20,padding:"16px 20px",background:C.card,border:`1px solid rgba(102,255,240,.2)`,borderRadius:12}}><div style={{fontSize:40}}>{emojis[esporte]||"🏆"}</div><div><p style={{fontFamily:"'Bebas Neue'",fontSize:24,letterSpacing:2,color:C.accent}}>{esporte}</p><p style={{fontSize:12,color:C.muted}}>Protocolo de performance ativo</p></div></div>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:20}}>
           {[{titulo:"🔥 Aquecimento Pré-Jogo",itens:proto.aquecimento,cor:"rgba(102,255,240,.04)"},{titulo:"💪 Treino Complementar",itens:proto.treino,cor:"rgba(167,139,250,.04)"},{titulo:"🧊 Recuperação Pós-Jogo",itens:proto.recuperacao,cor:"rgba(34,197,94,.04)"},{titulo:"🍽️ Nutrição no Dia do Jogo",itens:proto.nutricaoDia,cor:"rgba(251,191,36,.04)"}].map(({titulo,itens,cor})=>(
             <div key={titulo} className="card" style={{padding:"16px 18px",background:cor}}><p style={{fontFamily:"'Barlow Condensed'",fontWeight:700,fontSize:13,textTransform:"uppercase",letterSpacing:1,marginBottom:10,color:C.lgray}}>{titulo}</p>{itens.map((it,i)=>(<div key={i} style={{display:"flex",gap:8,fontSize:13,color:C.lgray,padding:"4px 0",borderBottom:`1px solid rgba(255,255,255,.04)`}}><span style={{color:C.accent,fontSize:10,marginTop:4,flexShrink:0}}>▸</span>{it}</div>))}</div>
@@ -1370,14 +988,26 @@ function calcGorduraUSNavy(sexo, altura, cintura, pescoco, quadril) {
   const p = parseFloat(pescoco);
   const q = parseFloat(quadril);
   if (!h || !c || !p) return null;
+
   if (sexo === "masculino") {
     if (c <= p) return null;
-    const g = 86.010 * Math.log10(c - p) - 70.041 * Math.log10(h) + 36.76;
-    return Math.max(3, Math.min(60, parseFloat(g.toFixed(1))));
+    const gNavy = 86.010 * Math.log10(c - p) - 70.041 * Math.log10(h) + 36.76;
+    return Math.max(3, Math.min(60, parseFloat(gNavy.toFixed(1))));
   } else {
     if (!q || c + q <= p) return null;
-    const g = 163.205 * Math.log10(c + q - p) - 97.684 * Math.log10(h) - 78.387;
-    return Math.max(10, Math.min(70, parseFloat(g.toFixed(1))));
+    const gNavy = 163.205 * Math.log10(c + q - p) - 97.684 * Math.log10(h) - 78.387;
+
+    // ── CORREÇÃO PARA FORMATO AMPULHETA ──────────────────────────────────────
+    // A fórmula US Navy superestima gordura em mulheres com quadril estruturalmente
+    // largo (tipo "ampulheta"). Diferença quadril-cintura > 28cm = estrutura óssea,
+    // não gordura. Aplica fator de correção progressivo (máx. 18% de desconto).
+    const diffQC = q - c;
+    let resultado = parseFloat(gNavy.toFixed(1));
+    if (diffQC > 28) {
+      const fator = Math.min(0.18, (diffQC - 28) * 0.009);
+      resultado = parseFloat((resultado * (1 - fator)).toFixed(1));
+    }
+    return Math.max(10, Math.min(55, resultado));
   }
 }
 
@@ -1422,7 +1052,6 @@ function Medidas({ perfil, pesosLog, onPesoIdealAtualizado }) {
   const pctAtual = historico.length > 0
     ? calcGorduraUSNavy(perfil.sexo, perfil.altura, historico[historico.length-1].cintura, historico[historico.length-1].pescoco, historico[historico.length-1].quadril)
     : null;
-
   const formPct = calcGorduraUSNavy(perfil.sexo, perfil.altura, form.cintura, form.pescoco, form.quadril);
   const classAtual = pctAtual ? classGordura(pctAtual, perfil.sexo) : null;
   const idealInfo = pctAtual ? pesoIdealPorGordura(pesoAtual, pctAtual, perfil.objetivo, perfil.sexo) : null;
@@ -1437,7 +1066,6 @@ function Medidas({ perfil, pesosLog, onPesoIdealAtualizado }) {
     setHistorico(novoHist);
     localStorage.setItem(MED_KEY, JSON.stringify(novoHist));
     setForm({ pescoco: "", cintura: "", quadril: "", braco: "", coxa: "" });
-    // Atualiza peso ideal no dashboard se tiver gordura calculada
     if (formPct && onPesoIdealAtualizado) {
       const info = pesoIdealPorGordura(pesoAtual, formPct, perfil.objetivo, perfil.sexo);
       onPesoIdealAtualizado(info.ideal);
@@ -1446,12 +1074,10 @@ function Medidas({ perfil, pesosLog, onPesoIdealAtualizado }) {
 
   const ultimo = historico.length > 0 ? historico[historico.length - 1] : null;
   const penultimo = historico.length > 1 ? historico[historico.length - 2] : null;
-
   function diff(campo) {
     if (!ultimo || !penultimo || !ultimo[campo] || !penultimo[campo]) return null;
     return (parseFloat(ultimo[campo]) - parseFloat(penultimo[campo])).toFixed(1);
   }
-
   const campos = [
     { key: "pescoco", label: "Pescoço", emoji: "📏", obrig: true },
     { key: "cintura", label: "Cintura", emoji: "📐", obrig: true },
@@ -1465,7 +1091,6 @@ function Medidas({ perfil, pesosLog, onPesoIdealAtualizado }) {
       <div className="sec-label">Composição Corporal</div>
       <p className="sec-title">📏 MEDIDAS <span style={{color:C.accent}}>& GORDURA</span></p>
 
-      {/* RESULTADO ATUAL */}
       {pctAtual && classAtual && (
         <div className="card-accent" style={{padding:"20px 22px",marginBottom:18}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:16}}>
@@ -1473,6 +1098,9 @@ function Medidas({ perfil, pesosLog, onPesoIdealAtualizado }) {
               <p style={{fontSize:10,fontWeight:700,letterSpacing:3,textTransform:"uppercase",color:C.muted,marginBottom:4}}>% Gordura Corporal</p>
               <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:56,lineHeight:1,color:classAtual.cor,textShadow:`0 0 20px ${classAtual.cor}40`}}>{pctAtual}%</div>
               <p style={{fontSize:14,fontWeight:700,color:classAtual.cor,marginTop:4}}>{classAtual.emoji} {classAtual.cls}</p>
+              {isFem && historico.length > 0 && (historico[historico.length-1].quadril - historico[historico.length-1].cintura) > 28 && (
+                <p style={{fontSize:10,color:"#f59e0b",marginTop:6,lineHeight:1.5}}>⚠️ Correção aplicada: quadril estruturalmente largo detectado. Resultado ajustado para refletir composição corporal real.</p>
+              )}
             </div>
             {idealInfo && (
               <div style={{textAlign:"right",background:"rgba(102,255,240,.06)",border:"1px solid rgba(102,255,240,.15)",borderRadius:10,padding:"14px 18px"}}>
@@ -1483,8 +1111,6 @@ function Medidas({ perfil, pesosLog, onPesoIdealAtualizado }) {
               </div>
             )}
           </div>
-
-          {/* Barra de gordura */}
           {(()=>{
             const max = isFem ? 50 : 40;
             const pct = Math.min(100, (pctAtual / max) * 100);
@@ -1499,12 +1125,7 @@ function Medidas({ perfil, pesosLog, onPesoIdealAtualizado }) {
                   <div style={{position:"absolute",left:`${Math.min(97,pct)}%`,top:-2,width:4,height:16,background:"#fff",borderRadius:2,boxShadow:"0 0 6px rgba(255,255,255,.8)"}}/>
                 </div>
                 <div style={{display:"flex",gap:12,flexWrap:"wrap"}}>
-                  {zonas.map((z,i)=>(
-                    <div key={i} style={{display:"flex",alignItems:"center",gap:4,fontSize:10,color:C.muted}}>
-                      <div style={{width:8,height:8,borderRadius:"50%",background:z.cor}}/>
-                      {z.label}
-                    </div>
-                  ))}
+                  {zonas.map((z,i)=>(<div key={i} style={{display:"flex",alignItems:"center",gap:4,fontSize:10,color:C.muted}}><div style={{width:8,height:8,borderRadius:"50%",background:z.cor}}/>{z.label}</div>))}
                 </div>
               </div>
             );
@@ -1512,7 +1133,6 @@ function Medidas({ perfil, pesosLog, onPesoIdealAtualizado }) {
         </div>
       )}
 
-      {/* ÚLTIMAS MEDIDAS */}
       {ultimo && (
         <div className="card" style={{padding:"18px 20px",marginBottom:18}}>
           <p style={{fontFamily:"'Barlow Condensed'",fontWeight:700,fontSize:15,textTransform:"uppercase",letterSpacing:1,marginBottom:12}}>Últimas Medidas — {ultimo.data}</p>
@@ -1533,17 +1153,13 @@ function Medidas({ perfil, pesosLog, onPesoIdealAtualizado }) {
         </div>
       )}
 
-      {/* FORMULÁRIO NOVO REGISTRO */}
       <div className="card" style={{padding:"20px 22px",marginBottom:18}}>
         <p style={{fontFamily:"'Barlow Condensed'",fontWeight:700,fontSize:15,textTransform:"uppercase",letterSpacing:1,marginBottom:4}}>Registrar Novas Medidas</p>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
-          <p style={{fontSize:11,color:C.muted,lineHeight:1.5}}>Use uma fita métrica. Pescoço + Cintura{isFem?" + Quadril":""} são obrigatórios para calcular o % de gordura pela <strong style={{color:C.lgray}}>Fórmula US Navy</strong>.</p>
-          <button onClick={()=>setShowGuia(true)} style={{flexShrink:0,marginLeft:12,padding:"6px 14px",background:"transparent",border:`1px solid rgba(102,255,240,.3)`,borderRadius:6,color:C.accent,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:11,letterSpacing:1,textTransform:"uppercase",cursor:"pointer",whiteSpace:"nowrap"}}>
-            📐 Ver como medir
-          </button>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+          <p style={{fontSize:11,color:C.muted,lineHeight:1.5}}>Use uma fita métrica. Pescoço + Cintura{isFem?" + Quadril":""} são obrigatórios para calcular o % de gordura pela <strong style={{color:C.lgray}}>Fórmula US Navy</strong>.{isFem&&<span style={{color:"#f59e0b"}}> Quadril muito maior que cintura? Correção automática será aplicada.</span>}</p>
+          <button onClick={()=>setShowGuia(true)} style={{flexShrink:0,marginLeft:12,padding:"6px 14px",background:"transparent",border:`1px solid rgba(102,255,240,.3)`,borderRadius:6,color:C.accent,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:11,letterSpacing:1,textTransform:"uppercase",cursor:"pointer",whiteSpace:"nowrap"}}>📐 Ver como medir</button>
         </div>
 
-        {/* MODAL GUIA VISUAL */}
         {showGuia && (
           <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.95)",zIndex:200,display:"flex",alignItems:"center",justifyContent:"center",padding:16}} onClick={()=>setShowGuia(false)}>
             <div style={{background:"#0F0F0F",border:"1px solid rgba(102,255,240,.2)",borderRadius:16,maxWidth:580,width:"100%",maxHeight:"90vh",overflowY:"auto",padding:24,animation:"fadeUp .3s ease"}} onClick={e=>e.stopPropagation()}>
@@ -1551,119 +1167,25 @@ function Medidas({ perfil, pesosLog, onPesoIdealAtualizado }) {
                 <p style={{fontFamily:"'Bebas Neue',cursive",fontSize:22,letterSpacing:2,color:C.accent}}>📐 GUIA DE MEDIÇÕES</p>
                 <button onClick={()=>setShowGuia(false)} style={{background:"transparent",border:"1px solid #333",color:C.muted,borderRadius:6,padding:"4px 12px",cursor:"pointer",fontSize:16}}>✕</button>
               </div>
-
+              <p style={{fontSize:13,color:C.lgray,lineHeight:1.7,marginBottom:12}}>Use uma fita métrica flexível. Meça sempre no mesmo horário (preferencialmente pela manhã em jejum).</p>
               {[
-                {
-                  key:"pescoco", emoji:"📏", titulo:"PESCOÇO",
-                  desc:"Meça abaixo do pomo de adão (gogó), na parte mais estreita do pescoço. Mantenha a cabeça reta olhando para frente.",
-                  svg:(
-                    <svg viewBox="0 0 160 140" width="100%" style={{maxWidth:160}}>
-                      <rect width="160" height="140" fill="#0A0A0A" rx="8"/>
-                      {/* cabeça */}
-                      <ellipse cx="80" cy="38" rx="22" ry="26" fill="#1a1a1a" stroke="#333" strokeWidth="1.5"/>
-                      {/* pescoço */}
-                      <rect x="68" y="60" width="24" height="28" rx="4" fill="#1a1a1a" stroke="#333" strokeWidth="1.5"/>
-                      {/* linha de medição */}
-                      <line x1="55" y1="74" x2="105" y2="74" stroke="#66FFF0" strokeWidth="2" strokeDasharray="4,3"/>
-                      <circle cx="55" cy="74" r="3" fill="#66FFF0"/>
-                      <circle cx="105" cy="74" r="3" fill="#66FFF0"/>
-                      {/* seta */}
-                      <text x="80" y="98" textAnchor="middle" fill="#66FFF0" fontSize="9" fontFamily="Arial" fontWeight="bold">← medir aqui →</text>
-                      <text x="80" y="112" textAnchor="middle" fill="#666" fontSize="8" fontFamily="Arial">abaixo do gogó</text>
-                    </svg>
-                  )
-                },
-                {
-                  key:"cintura", emoji:"📐", titulo:"CINTURA / ABDÔMEN",
-                  desc:"Meça na parte mais larga do abdômen — geralmente na altura do umbigo ou um pouco acima. Não prenda a barriga!",
-                  svg:(
-                    <svg viewBox="0 0 160 140" width="100%" style={{maxWidth:160}}>
-                      <rect width="160" height="140" fill="#0A0A0A" rx="8"/>
-                      {/* torso */}
-                      <path d="M50 20 Q40 50 42 90 Q55 100 80 102 Q105 100 118 90 Q120 50 110 20 Z" fill="#1a1a1a" stroke="#333" strokeWidth="1.5"/>
-                      {/* linha umbigo */}
-                      <line x1="35" y1="62" x2="125" y2="62" stroke="#66FFF0" strokeWidth="2" strokeDasharray="4,3"/>
-                      <circle cx="35" cy="62" r="3" fill="#66FFF0"/>
-                      <circle cx="125" cy="62" r="3" fill="#66FFF0"/>
-                      {/* umbigo */}
-                      <circle cx="80" cy="62" r="4" fill="#333" stroke="#555" strokeWidth="1"/>
-                      <text x="80" y="90" textAnchor="middle" fill="#66FFF0" fontSize="9" fontFamily="Arial" fontWeight="bold">← medir aqui →</text>
-                      <text x="80" y="104" textAnchor="middle" fill="#666" fontSize="8" fontFamily="Arial">na altura do umbigo</text>
-                      <text x="80" y="116" textAnchor="middle" fill="#666" fontSize="8" fontFamily="Arial">sem prender barriga</text>
-                    </svg>
-                  )
-                },
-                {
-                  key:"quadril", emoji:"🍑", titulo:"QUADRIL (só feminino)",
-                  desc:"Meça na parte mais larga do quadril / glúteos, mantendo os pés juntos. A fita deve ficar paralela ao chão.",
-                  svg:(
-                    <svg viewBox="0 0 160 140" width="100%" style={{maxWidth:160}}>
-                      <rect width="160" height="140" fill="#0A0A0A" rx="8"/>
-                      {/* quadril */}
-                      <path d="M55 20 Q35 40 32 70 Q34 95 60 100 Q80 105 100 100 Q126 95 128 70 Q125 40 105 20 Z" fill="#1a1a1a" stroke="#333" strokeWidth="1.5"/>
-                      {/* linha medição */}
-                      <line x1="28" y1="72" x2="132" y2="72" stroke="#66FFF0" strokeWidth="2" strokeDasharray="4,3"/>
-                      <circle cx="28" cy="72" r="3" fill="#66FFF0"/>
-                      <circle cx="132" cy="72" r="3" fill="#66FFF0"/>
-                      <text x="80" y="95" textAnchor="middle" fill="#66FFF0" fontSize="9" fontFamily="Arial" fontWeight="bold">← medir aqui →</text>
-                      <text x="80" y="110" textAnchor="middle" fill="#666" fontSize="8" fontFamily="Arial">parte mais larga</text>
-                      <text x="80" y="122" textAnchor="middle" fill="#666" fontSize="8" fontFamily="Arial">fita paralela ao chão</text>
-                    </svg>
-                  )
-                },
-                {
-                  key:"braco", emoji:"💪", titulo:"BRAÇO",
-                  desc:"Meça o bíceps relaxado na parte mais larga do braço, entre o ombro e o cotovelo. Braço estendido ao lado do corpo.",
-                  svg:(
-                    <svg viewBox="0 0 160 140" width="100%" style={{maxWidth:160}}>
-                      <rect width="160" height="140" fill="#0A0A0A" rx="8"/>
-                      {/* braço */}
-                      <path d="M70 15 Q60 20 58 50 Q56 80 60 110 Q70 118 80 118 Q90 118 100 110 Q104 80 102 50 Q100 20 90 15 Z" fill="#1a1a1a" stroke="#333" strokeWidth="1.5"/>
-                      {/* linha medição */}
-                      <line x1="44" y1="55" x2="116" y2="55" stroke="#66FFF0" strokeWidth="2" strokeDasharray="4,3"/>
-                      <circle cx="44" cy="55" r="3" fill="#66FFF0"/>
-                      <circle cx="116" cy="55" r="3" fill="#66FFF0"/>
-                      <text x="80" y="82" textAnchor="middle" fill="#66FFF0" fontSize="9" fontFamily="Arial" fontWeight="bold">← medir aqui →</text>
-                      <text x="80" y="96" textAnchor="middle" fill="#666" fontSize="8" fontFamily="Arial">parte mais larga</text>
-                      <text x="80" y="108" textAnchor="middle" fill="#666" fontSize="8" fontFamily="Arial">bíceps relaxado</text>
-                    </svg>
-                  )
-                },
-                {
-                  key:"coxa", emoji:"🦵", titulo:"COXA",
-                  desc:"Meça a parte mais larga da coxa, logo abaixo da dobra do glúteo. Peso distribuído em ambas as pernas.",
-                  svg:(
-                    <svg viewBox="0 0 160 140" width="100%" style={{maxWidth:160}}>
-                      <rect width="160" height="140" fill="#0A0A0A" rx="8"/>
-                      {/* coxa */}
-                      <path d="M55 15 Q42 25 40 60 Q40 95 55 115 Q68 125 80 125 Q92 125 105 115 Q120 95 120 60 Q118 25 105 15 Z" fill="#1a1a1a" stroke="#333" strokeWidth="1.5"/>
-                      {/* linha medição */}
-                      <line x1="32" y1="48" x2="128" y2="48" stroke="#66FFF0" strokeWidth="2" strokeDasharray="4,3"/>
-                      <circle cx="32" cy="48" r="3" fill="#66FFF0"/>
-                      <circle cx="128" cy="48" r="3" fill="#66FFF0"/>
-                      <text x="80" y="78" textAnchor="middle" fill="#66FFF0" fontSize="9" fontFamily="Arial" fontWeight="bold">← medir aqui →</text>
-                      <text x="80" y="92" textAnchor="middle" fill="#666" fontSize="8" fontFamily="Arial">parte mais larga</text>
-                      <text x="80" y="106" textAnchor="middle" fill="#666" fontSize="8" fontFamily="Arial">logo abaixo do glúteo</text>
-                    </svg>
-                  )
-                },
-              ].map(({key,emoji,titulo,desc,svg})=>(
-                <div key={key} style={{display:"flex",gap:16,padding:"16px 0",borderBottom:"1px solid #1a1a1a",alignItems:"flex-start"}}>
-                  <div style={{flexShrink:0,width:120}}>{svg}</div>
-                  <div style={{flex:1}}>
-                    <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:14,textTransform:"uppercase",letterSpacing:1,color:C.accent,marginBottom:6}}>{emoji} {titulo}</p>
-                    <p style={{fontSize:12,color:C.lgray,lineHeight:1.7}}>{desc}</p>
-                  </div>
+                {emoji:"📏",titulo:"PESCOÇO",desc:"Meça abaixo do pomo de adão (gogó), na parte mais estreita do pescoço. Cabeça reta, olhando para frente."},
+                {emoji:"📐",titulo:"CINTURA / ABDÔMEN",desc:"Na parte mais larga do abdômen — geralmente na altura do umbigo. Não prenda a barriga!"},
+                {emoji:"🍑",titulo:"QUADRIL (feminino)",desc:"Na parte mais larga do quadril/glúteos, pés juntos. Fita paralela ao chão."},
+                {emoji:"💪",titulo:"BRAÇO",desc:"Bíceps relaxado, parte mais larga entre ombro e cotovelo."},
+                {emoji:"🦵",titulo:"COXA",desc:"Parte mais larga da coxa, logo abaixo da dobra do glúteo."},
+              ].map(({emoji,titulo,desc})=>(
+                <div key={titulo} style={{padding:"12px 0",borderBottom:"1px solid #1a1a1a"}}>
+                  <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:14,textTransform:"uppercase",letterSpacing:1,color:C.accent,marginBottom:4}}>{emoji} {titulo}</p>
+                  <p style={{fontSize:12,color:C.lgray,lineHeight:1.7}}>{desc}</p>
                 </div>
               ))}
-
-              <div style={{marginTop:16,padding:"14px",background:"rgba(102,255,240,.04)",border:"1px solid rgba(102,255,240,.1)",borderRadius:8}}>
-                <p style={{fontSize:11,color:C.muted,lineHeight:1.7}}>💡 <strong style={{color:C.accent}}>Dica:</strong> Meça sempre no mesmo horário (preferencialmente pela manhã em jejum) para comparações mais precisas. Use uma fita métrica flexível e não aperte demais.</p>
-              </div>
-
-              <button className="btn btn-accent" style={{width:"100%",marginTop:16}} onClick={()=>setShowGuia(false)}>
-                Entendido! ✓
-              </button>
+              {isFem && (
+                <div style={{marginTop:16,padding:"14px",background:"rgba(245,158,11,.06)",border:"1px solid rgba(245,158,11,.2)",borderRadius:8}}>
+                  <p style={{fontSize:11,color:"#f59e0b",lineHeight:1.7}}>⚠️ <strong>Nota para tipo "ampulheta":</strong> Se seu quadril for muito maior que sua cintura (diferença acima de 28cm), o app aplica uma correção automática no cálculo para compensar a limitação da fórmula US Navy com esse biotipo corporal.</p>
+                </div>
+              )}
+              <button className="btn btn-accent" style={{width:"100%",marginTop:16}} onClick={()=>setShowGuia(false)}>Entendido! ✓</button>
             </div>
           </div>
         )}
@@ -1677,7 +1199,6 @@ function Medidas({ perfil, pesosLog, onPesoIdealAtualizado }) {
           ))}
         </div>
 
-        {/* Preview do % calculado */}
         {formPct && (()=>{
           const cls = classGordura(formPct, perfil.sexo);
           const inf = pesoIdealPorGordura(pesoAtual, formPct, perfil.objetivo, perfil.sexo);
@@ -1697,12 +1218,9 @@ function Medidas({ perfil, pesosLog, onPesoIdealAtualizado }) {
           );
         })()}
 
-        <button className="btn btn-accent" style={{width:"100%"}} onClick={salvar}>
-          💾 Salvar Medidas
-        </button>
+        <button className="btn btn-accent" style={{width:"100%"}} onClick={salvar}>💾 Salvar Medidas</button>
       </div>
 
-      {/* HISTÓRICO */}
       {historico.length > 1 && (
         <div className="card" style={{padding:"18px 20px",marginBottom:18}}>
           <p style={{fontFamily:"'Barlow Condensed'",fontWeight:700,fontSize:15,textTransform:"uppercase",letterSpacing:1,marginBottom:12}}>Histórico de Registros</p>
@@ -1735,146 +1253,81 @@ function Medidas({ perfil, pesosLog, onPesoIdealAtualizado }) {
   );
 }
 
-
 // ─── DEMO PERFIL ─────────────────────────────────────────────────────────────
 const DEMO_PERFIL={nome:"Carlos Mendes",email:"demo@ironcut.app",senha:"demo123",objetivo:"fat",sexo:"masculino",idade:"34",peso:"92",altura:"178",nivelAtividade:"Moderadamente ativo (3-4x/semana)",localTreino:"Academia completa",restricoes:[],condicoes:["Nenhuma"]};
 
 // ─── APP PRINCIPAL ────────────────────────────────────────────────────────────
 export default function App() {
-  const [tela,     setTela]    = useState("landing");
-  const [aba,      setAba]     = useState("dashboard");
-  const [perfil,   setPerfil]  = useState(null);
-  const [proto,    setProto]   = useState(null);
-  const [pesosLog, setPesos]   = useState([]);
-  const [aguaLog,  setAguaLog] = useState({});
-  const [loading,  setLoading] = useState(false);
-  const [showLogin,setLogin]   = useState(false);
-  // ✅ NOVO: estado de bloqueio
-  const [bloqueado, setBloqueado] = useState(false);
-  const [checkLog, setCheckLog] = useState({});
-  const [pesoIdealReal, setPesoIdealReal] = useState(null);
+  const [tela,setTela]=useState("landing");
+  const [aba,setAba]=useState("dashboard");
+  const [perfil,setPerfil]=useState(null);
+  const [proto,setProto]=useState(null);
+  const [pesosLog,setPesos]=useState([]);
+  const [aguaLog,setAguaLog]=useState({});
+  const [loading,setLoading]=useState(false);
+  const [showLogin,setLogin]=useState(false);
+  const [bloqueado,setBloqueado]=useState(false);
+  const [checkLog,setCheckLog]=useState({});
+  const [pesoIdealReal,setPesoIdealReal]=useState(null);
 
-  // Restore session on mount
   useEffect(()=>{
     const sess=getSession();
     if(sess){
       (async()=>{
         const conta=await getContaFirebase(sess.email).catch(()=>null);
         if(conta&&conta.senha===sess.senha){
-          // ✅ VERIFICAÇÃO DE COMPRA na restauração de sessão
-          const liberado = await verificarComprador(sess.email).catch(()=>true);
-          setPerfil(conta.perfil);
-          setProto(conta.protocolo);
-          setPesos(conta.pesosLog||[]);
-          const savedCheck1 = JSON.parse(localStorage.getItem(`ic_check_${conta.perfil.email}`) || "{}");
-          setCheckLog(savedCheck1);
-          setAguaLog(conta.aguaLog||{});
-          setBloqueado(!liberado);
-          setTela("app");
+          const liberado=await verificarComprador(sess.email).catch(()=>true);
+          setPerfil(conta.perfil);setProto(conta.protocolo);setPesos(conta.pesosLog||[]);
+          const savedCheck1=JSON.parse(localStorage.getItem(`ic_check_${conta.perfil.email}`)||"{}");
+          setCheckLog(savedCheck1);setAguaLog(conta.aguaLog||{});setBloqueado(!liberado);setTela("app");
         } else {
           const c=getContas();
           if(c[sess.email]&&c[sess.email].senha===sess.senha){
-            const liberado = await verificarComprador(sess.email).catch(()=>true);
+            const liberado=await verificarComprador(sess.email).catch(()=>true);
             setPerfil(c[sess.email].perfil);
-            const savedCheck2 = JSON.parse(localStorage.getItem(`ic_check_${c[sess.email].perfil.email}`) || "{}");
-            setCheckLog(savedCheck2);
-            setProto(c[sess.email].protocolo);
-            setPesos(c[sess.email].pesosLog||[]);
-            setAguaLog(c[sess.email].aguaLog||{});
-            setBloqueado(!liberado);
-            setTela("app");
+            const savedCheck2=JSON.parse(localStorage.getItem(`ic_check_${c[sess.email].perfil.email}`)||"{}");
+            setCheckLog(savedCheck2);setProto(c[sess.email].protocolo);setPesos(c[sess.email].pesosLog||[]);setAguaLog(c[sess.email].aguaLog||{});setBloqueado(!liberado);setTela("app");
           }
         }
       })();
     }
   },[]);
 
-  function syncStorage(p,pr,pl,al){
-    const dados={senha:p.senha||"",perfil:p,protocolo:pr,pesosLog:pl,aguaLog:al};
-    saveContaFirebase(p.email,dados).catch(()=>{});
-  }
-
-  function onCadastro(p,pr,pl,al){
-    // Novos cadastros NÃO verificam compra — eles acabaram de criar conta
-    // A verificação ocorre apenas no login
-    setPerfil(p);setProto(pr);setPesos(pl);setAguaLog(al);
-    setBloqueado(false); // recém cadastrado, libera para ver o app
-    setTela("app");
-  }
-
-  // ✅ ATUALIZADO: recebe parâmetro "comprou"
-  function onLogin(p,pr,pl,al, comprou=true){
-    setPerfil(p);setProto(pr);setPesos(pl);setAguaLog(al);
-    setBloqueado(!comprou);
-    setLogin(false);setTela("app");
-  }
-
-  function onLogout(){
-    clearSession();setPerfil(null);setProto(null);setPesos([]);
-    setAguaLog({});setBloqueado(false);setTela("landing");
-  }
+  function syncStorage(p,pr,pl,al){const dados={senha:p.senha||"",perfil:p,protocolo:pr,pesosLog:pl,aguaLog:al};saveContaFirebase(p.email,dados).catch(()=>{});}
+  function onCadastro(p,pr,pl,al){setPerfil(p);setProto(pr);setPesos(pl);setAguaLog(al);setBloqueado(false);setTela("app");}
+  function onLogin(p,pr,pl,al,comprou=true){setPerfil(p);setProto(pr);setPesos(pl);setAguaLog(al);setBloqueado(!comprou);setLogin(false);setTela("app");}
+  function onLogout(){clearSession();setPerfil(null);setProto(null);setPesos([]);setAguaLog({});setBloqueado(false);setTela("landing");}
 
   function addPeso(v){
     const dataHoje=hoje();
     if(pesosLog.length&&pesosLog[pesosLog.length-1].data===dataHoje){alert("Você já registrou seu peso hoje! Volte amanhã. 💪");return;}
-    const nl=[...pesosLog,{val:v,data:dataHoje}];
-    setPesos(nl);syncStorage(perfil,proto,nl,aguaLog);
+    const nl=[...pesosLog,{val:v,data:dataHoje}];setPesos(nl);syncStorage(perfil,proto,nl,aguaLog);
   }
 
   function toggleCheck(tipo){
-    const d=hoje();
-    const diaAtual=checkLog[d]||{treino:false,dieta:false};
+    const d=hoje();const diaAtual=checkLog[d]||{treino:false,dieta:false};
     const novo={...checkLog,[d]:{...diaAtual,[tipo]:!diaAtual[tipo]}};
-    setCheckLog(novo);
-    localStorage.setItem(`ic_check_${perfil.email}`,JSON.stringify(novo));
+    setCheckLog(novo);localStorage.setItem(`ic_check_${perfil.email}`,JSON.stringify(novo));
   }
 
   function calcScore(){
-    let total=0,dias=0;
-    const ultimos21=Object.keys(checkLog).slice(-21);
-    for(const d of ultimos21){
-      dias++;
-      const c=checkLog[d]||{};
-      const agua=aguaLog[d]||0;
-      const garrafas=Math.ceil(aguaDia(perfil.peso)/0.5);
-      let pontos=0;
-      if(c.treino)pontos+=35;
-      if(c.dieta)pontos+=25;
-      if(agua>=garrafas)pontos+=25;
-      if(pesosLog.some(p=>p.data===d))pontos+=15;
-      total+=pontos;
-    }
+    let total=0,dias=0;const ultimos21=Object.keys(checkLog).slice(-21);
+    for(const d of ultimos21){dias++;const c=checkLog[d]||{};const agua=aguaLog[d]||0;const garrafas=Math.ceil(aguaDia(perfil.peso)/0.5);let pontos=0;if(c.treino)pontos+=35;if(c.dieta)pontos+=25;if(agua>=garrafas)pontos+=25;if(pesosLog.some(p=>p.data===d))pontos+=15;total+=pontos;}
     return dias?Math.round(total/dias):0;
   }
 
   function calcStreak(){
-    let streak=0;
-    const d=new Date();
-    while(true){
-      const data=`${String(d.getDate()).padStart(2,"0")}/${String(d.getMonth()+1).padStart(2,"0")}/${d.getFullYear()}`;
-      const c=checkLog[data]||{};
-      const agua=aguaLog[data]||0;
-      const garrafas=Math.ceil(aguaDia(perfil.peso)/0.5);
-      if(c.treino&&c.dieta&&agua>=garrafas){streak++;d.setDate(d.getDate()-1);}
-      else break;
-    }
+    let streak=0;const d=new Date();
+    while(true){const data=`${String(d.getDate()).padStart(2,"0")}/${String(d.getMonth()+1).padStart(2,"0")}/${d.getFullYear()}`;const c=checkLog[data]||{};const agua=aguaLog[data]||0;const garrafas=Math.ceil(aguaDia(perfil.peso)/0.5);if(c.treino&&c.dieta&&agua>=garrafas){streak++;d.setDate(d.getDate()-1);}else break;}
     return streak;
   }
 
-  function toggleAgua(n){
-    const d=hoje();
-    const cur=aguaLog[d]||0;
-    const novo={...aguaLog,[d]:cur>=n?n-1:n};
-    setAguaLog(novo);syncStorage(perfil,proto,pesosLog,novo);
-  }
+  function toggleAgua(n){const d=hoje();const cur=aguaLog[d]||0;const novo={...aguaLog,[d]:cur>=n?n-1:n};setAguaLog(novo);syncStorage(perfil,proto,pesosLog,novo);}
 
   async function onDemo(){
-    setLoading(true);
-    const pr=await gerarProtocolo(DEMO_PERFIL);
+    setLoading(true);const pr=await gerarProtocolo(DEMO_PERFIL);
     const pl=[{val:92,data:"01/04/2025"},{val:91.2,data:"08/04/2025"},{val:90.5,data:"15/04/2025"},{val:89.8,data:"22/04/2025"},{val:89.0,data:hoje()}];
-    setPerfil(DEMO_PERFIL);setProto(pr);setPesos(pl);setAguaLog({});
-    setBloqueado(false); // demo sempre liberado
-    setLoading(false);setTela("app");
+    setPerfil(DEMO_PERFIL);setProto(pr);setPesos(pl);setAguaLog({});setBloqueado(false);setLoading(false);setTela("app");
   }
 
   const navItems=[
@@ -1906,13 +1359,9 @@ export default function App() {
         </>
       )}
 
-      {/* ✅ TELA DE BLOQUEIO — exibida quando usuário logou mas não comprou */}
-      {tela==="app" && perfil && bloqueado && (
-        <AcessoBloqueado email={perfil.email} onLogout={onLogout}/>
-      )}
+      {tela==="app"&&perfil&&bloqueado&&(<AcessoBloqueado email={perfil.email} onLogout={onLogout}/>)}
 
-      {/* APP NORMAL — só exibido quando liberado */}
-      {tela==="app" && perfil && !bloqueado && (
+      {tela==="app"&&perfil&&!bloqueado&&(
         <div className="app-wrap">
           <div className="sidebar">
             <div className="slogo-wrap">
