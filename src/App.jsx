@@ -1158,7 +1158,29 @@ function Treinos({ protocolo, perfil, onUpdateProtocolo }) {
   const CARGA_KEY=`ic_cargas_${perfil.email}`;
   const [cargas,setCargas]=useState(()=>{try{return JSON.parse(localStorage.getItem(CARGA_KEY)||"{}");}catch{return{};}});
 
-  // ── TEMPORIZADOR DE DESCANSO ─────────────────────────────────────────────
+  // ── CALCULADORA 1RM ──────────────────────────────────────────────────────
+  const [modal1RM, setModal1RM] = useState(null); // {nome, carga, reps}
+  const [reps1RM, setReps1RM] = useState("8");
+
+  // Fórmulas 1RM (usamos média das 3 principais)
+  function calc1RM(carga, reps) {
+    const c = parseFloat(carga), r = parseInt(reps);
+    if (!c || !r || r < 1) return null;
+    if (r === 1) return c;
+    const epley   = c * (1 + r / 30);
+    const brzycki = c * (36 / (37 - r));
+    const lander  = (100 * c) / (101.3 - 2.67123 * r);
+    const media   = (epley + brzycki + lander) / 3;
+    return parseFloat(media.toFixed(1));
+  }
+
+  // Tabela de % do 1RM por reps
+  function tabelaReps(rm1) {
+    return [1,2,3,4,5,6,8,10,12,15].map(r => ({
+      reps: r,
+      carga: parseFloat((rm1 * [1,.97,.94,.92,.89,.86,.81,.75,.70,.64][r===1?0:r===2?1:r===3?2:r===4?3:r===5?4:r===6?5:r===8?6:r===10?7:r===12?8:9]).toFixed(1))
+    }));
+  }
   const [timer, setTimer] = useState(null);        // segundos restantes ou null
   const [timerTotal, setTimerTotal] = useState(60); // total configurado
   const [timerAtivo, setTimerAtivo] = useState(false);
@@ -1283,7 +1305,107 @@ function Treinos({ protocolo, perfil, onUpdateProtocolo }) {
       </div>
 
       <div className="week-grid">{dias.map(([dia,info])=>(<div key={dia} className="card wcard"><div className="wcard-n">{dia}</div><div className="wcard-name">{info.nome}</div><div className="wcard-desc">{info.ex.length} exercícios</div></div>))}</div>
-      {dias.map(([dia,info])=>(<div key={dia} style={{marginBottom:16}}><p style={{fontFamily:"'Barlow Condensed'",fontWeight:700,fontSize:15,textTransform:"uppercase",letterSpacing:1,marginBottom:8,color:C.accent}}>{dia} — {info.nome}</p><div className="treino-list card">{info.ex.map(([nome,sets],i)=>{const key=`${dia}-${i}`;const dadoCarga=cargas[key]||{carga:"",historico:[]};return(<div key={i}><div className="treino-item" style={{cursor:"pointer"}} onClick={()=>iniciarTimer(timerTotal||60, nome)}><div className="treino-num">{String(i+1).padStart(2,"0")}</div><div className="treino-name">{nome}</div><div style={{display:"flex",alignItems:"center",gap:8}}><div className="treino-sets">{sets}</div><span style={{fontSize:10,color:"#444",fontFamily:"'Barlow Condensed',sans-serif",letterSpacing:1}}>▶ INICIAR</span></div></div>{(()=>{const prog=sugestaoProgressao(key);return(<><div className="carga-row"><span className="carga-label">Carga:</span><input className="carga-input" type="number" placeholder="0" value={dadoCarga.carga} onChange={e=>{const novo={...cargas,[key]:{...dadoCarga,carga:e.target.value}};setCargas(novo);localStorage.setItem(CARGA_KEY,JSON.stringify(novo));}} onBlur={e=>salvarCarga(dia,i,e.target.value)} onClick={e=>e.stopPropagation()}/><span className="carga-unit">kg</span>{dadoCarga.historico.length>1&&(<div className="carga-hist"><span style={{fontSize:10,color:"#444",marginRight:2}}>Histórico:</span>{dadoCarga.historico.slice(0,-1).slice(-3).map((h,j)=>(<span key={j} className="carga-hist-item">{h}kg</span>))}</div>)}</div>{prog&&(<div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"8px 18px 10px",background:"rgba(34,197,94,.06)",borderBottom:`1px solid ${C.border}`}}><div style={{display:"flex",alignItems:"center",gap:8}}><span style={{fontSize:14}}>⬆️</span><div><span style={{fontSize:11,fontWeight:700,color:"#22c55e",letterSpacing:1}}>HORA DE EVOLUIR!</span><span style={{fontSize:11,color:"#666",marginLeft:6}}>Mesma carga por 3x seguidas</span></div></div><button onClick={e=>{e.stopPropagation();const novoVal=String(prog.sugerida);const novo={...cargas,[key]:{...dadoCarga,carga:novoVal}};setCargas(novo);localStorage.setItem(CARGA_KEY,JSON.stringify(novo));}} style={{padding:"4px 12px",background:"#22c55e",color:"#000",border:"none",borderRadius:5,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,fontSize:12,letterSpacing:1,cursor:"pointer",whiteSpace:"nowrap"}}>+{prog.aumento}kg → {prog.sugerida}kg</button></div>)}</>);})()}</div>);})}</div></div>))}
+
+      {/* MODAL 1RM */}
+      {modal1RM&&(
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.95)",zIndex:200,display:"flex",alignItems:"center",justifyContent:"center",padding:16}} onClick={()=>setModal1RM(null)}>
+          <div style={{background:"#0F0F0F",border:"1px solid rgba(102,255,240,.25)",borderRadius:16,maxWidth:420,width:"100%",maxHeight:"90vh",overflowY:"auto",padding:24,animation:"fadeUp .3s ease"}} onClick={e=>e.stopPropagation()}>
+            {/* Header */}
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
+              <div>
+                <p style={{fontFamily:"'Bebas Neue',cursive",fontSize:22,letterSpacing:2,color:C.accent}}>💪 CALC. 1RM</p>
+                <p style={{fontSize:11,color:C.muted,marginTop:2}}>{modal1RM.nome}</p>
+              </div>
+              <button onClick={()=>setModal1RM(null)} style={{background:"transparent",border:"1px solid #333",color:C.muted,borderRadius:6,padding:"4px 12px",cursor:"pointer",fontSize:16}}>✕</button>
+            </div>
+
+            {/* Inputs */}
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:16}}>
+              <div className="field" style={{margin:0}}>
+                <label>Carga (kg)</label>
+                <input type="number" placeholder="Ex: 80" value={modal1RM.carga}
+                  onChange={e=>setModal1RM(p=>({...p,carga:e.target.value}))}
+                  style={{width:"100%",padding:"12px 14px",background:"#0D0D0D",border:"1px solid #222",borderRadius:8,color:"#fff",fontFamily:"'Barlow',sans-serif",fontSize:14,outline:"none"}}
+                  onFocus={e=>e.target.style.borderColor="#66FFF0"} onBlur={e=>e.target.style.borderColor="#222"}/>
+              </div>
+              <div className="field" style={{margin:0}}>
+                <label>Repetições feitas</label>
+                <input type="number" placeholder="Ex: 8" value={reps1RM}
+                  onChange={e=>setReps1RM(e.target.value)}
+                  style={{width:"100%",padding:"12px 14px",background:"#0D0D0D",border:"1px solid #222",borderRadius:8,color:"#fff",fontFamily:"'Barlow',sans-serif",fontSize:14,outline:"none"}}
+                  onFocus={e=>e.target.style.borderColor="#66FFF0"} onBlur={e=>e.target.style.borderColor="#222"}/>
+              </div>
+            </div>
+
+            {/* Chips de reps rápidas */}
+            <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:20}}>
+              {[3,5,6,8,10,12].map(r=>(
+                <button key={r} onClick={()=>setReps1RM(String(r))}
+                  style={{padding:"4px 12px",borderRadius:6,border:`1px solid ${reps1RM===String(r)?"rgba(102,255,240,.5)":"#2a2a2a"}`,background:reps1RM===String(r)?"rgba(102,255,240,.1)":"#0D0D0D",color:reps1RM===String(r)?C.accent:C.muted,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:12,letterSpacing:1,cursor:"pointer"}}>
+                  {r} reps
+                </button>
+              ))}
+            </div>
+
+            {/* Resultado 1RM */}
+            {(()=>{
+              const rm = calc1RM(modal1RM.carga, reps1RM);
+              if (!rm) return null;
+              const tabela = tabelaReps(rm);
+              return(
+                <>
+                  {/* 1RM em destaque */}
+                  <div style={{background:"rgba(102,255,240,.06)",border:"1px solid rgba(102,255,240,.2)",borderRadius:12,padding:"20px",textAlign:"center",marginBottom:16}}>
+                    <p style={{fontSize:10,fontWeight:700,letterSpacing:3,textTransform:"uppercase",color:C.muted,marginBottom:4}}>Seu 1RM Estimado</p>
+                    <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:64,lineHeight:1,color:C.accent,textShadow:`0 0 30px rgba(102,255,240,.4)`}}>{rm}<span style={{fontSize:28,color:C.muted,marginLeft:4}}>kg</span></div>
+                    <p style={{fontSize:11,color:C.muted,marginTop:6}}>Média Epley + Brzycki + Lander</p>
+                  </div>
+
+                  {/* Tabela de % */}
+                  <p style={{fontSize:10,fontWeight:700,letterSpacing:2,textTransform:"uppercase",color:C.muted,marginBottom:10}}>Tabela de Cargas por Repetição</p>
+                  <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:6,marginBottom:20}}>
+                    {tabela.map(({reps,carga})=>{
+                      const pct = Math.round((carga/rm)*100);
+                      const cor = pct>=95?"#66FFF0":pct>=85?"#22c55e":pct>=75?"#f59e0b":"#888";
+                      const isAtual = String(reps)===String(reps1RM);
+                      return(
+                        <div key={reps} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 12px",background:isAtual?"rgba(102,255,240,.08)":"#0D0D0D",border:`1px solid ${isAtual?"rgba(102,255,240,.3)":"#1a1a1a"}`,borderRadius:7}}>
+                          <div style={{display:"flex",alignItems:"center",gap:8}}>
+                            <span style={{fontFamily:"'Bebas Neue',cursive",fontSize:18,color:isAtual?C.accent:C.text,lineHeight:1}}>{reps}×</span>
+                            <span style={{fontSize:9,color:C.muted,letterSpacing:1}}>{pct}%</span>
+                          </div>
+                          <span style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:cor}}>{carga}<span style={{fontSize:11,color:C.muted,marginLeft:2}}>kg</span></span>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Zonas de treino */}
+                  <p style={{fontSize:10,fontWeight:700,letterSpacing:2,textTransform:"uppercase",color:C.muted,marginBottom:10}}>Zonas de Treino</p>
+                  <div style={{display:"flex",flexDirection:"column",gap:6}}>
+                    {[
+                      {zona:"Força Máxima",reps:"1–3",pct:"93–100%",carga:`${parseFloat((rm*.96).toFixed(1))}–${rm}kg`,cor:"#66FFF0"},
+                      {zona:"Força / Hipertrofia",reps:"4–6",pct:"85–92%",carga:`${parseFloat((rm*.85).toFixed(1))}–${parseFloat((rm*.92).toFixed(1))}kg`,cor:"#22c55e"},
+                      {zona:"Hipertrofia",reps:"7–12",pct:"70–84%",carga:`${parseFloat((rm*.70).toFixed(1))}–${parseFloat((rm*.84).toFixed(1))}kg`,cor:"#a78bfa"},
+                      {zona:"Resistência Muscular",reps:"13–20",pct:"55–69%",carga:`${parseFloat((rm*.55).toFixed(1))}–${parseFloat((rm*.69).toFixed(1))}kg`,cor:"#f59e0b"},
+                    ].map(({zona,reps,pct,carga,cor})=>(
+                      <div key={zona} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 12px",background:"#0D0D0D",border:"1px solid #1a1a1a",borderRadius:7}}>
+                        <div>
+                          <p style={{fontSize:12,fontWeight:600,color:cor}}>{zona}</p>
+                          <p style={{fontSize:10,color:C.muted}}>{reps} reps • {pct}</p>
+                        </div>
+                        <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:13,color:C.lgray}}>{carga}</p>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              );
+            })()}
+          </div>
+        </div>
+      )}
+
+      {dias.map(([dia,info])=>(<div key={dia} style={{marginBottom:16}}><p style={{fontFamily:"'Barlow Condensed'",fontWeight:700,fontSize:15,textTransform:"uppercase",letterSpacing:1,marginBottom:8,color:C.accent}}>{dia} — {info.nome}</p><div className="treino-list card">{info.ex.map(([nome,sets],i)=>{const key=`${dia}-${i}`;const dadoCarga=cargas[key]||{carga:"",historico:[]};return(<div key={i}><div className="treino-item" style={{cursor:"pointer"}} onClick={()=>iniciarTimer(timerTotal||60, nome)}><div className="treino-num">{String(i+1).padStart(2,"0")}</div><div className="treino-name">{nome}</div><div style={{display:"flex",alignItems:"center",gap:8}}><div className="treino-sets">{sets}</div><span style={{fontSize:10,color:"#444",fontFamily:"'Barlow Condensed',sans-serif",letterSpacing:1}}>▶ INICIAR</span></div></div>{(()=>{const prog=sugestaoProgressao(key);const rm=dadoCarga.carga?calc1RM(dadoCarga.carga,8):null;return(<><div className="carga-row"><span className="carga-label">Carga:</span><input className="carga-input" type="number" placeholder="0" value={dadoCarga.carga} onChange={e=>{const novo={...cargas,[key]:{...dadoCarga,carga:e.target.value}};setCargas(novo);localStorage.setItem(CARGA_KEY,JSON.stringify(novo));}} onBlur={e=>salvarCarga(dia,i,e.target.value)} onClick={e=>e.stopPropagation()}/><span className="carga-unit">kg</span>{dadoCarga.historico.length>1&&(<div className="carga-hist"><span style={{fontSize:10,color:"#444",marginRight:2}}>Histórico:</span>{dadoCarga.historico.slice(0,-1).slice(-3).map((h,j)=>(<span key={j} className="carga-hist-item">{h}kg</span>))}</div>)}{dadoCarga.carga&&(<button onClick={e=>{e.stopPropagation();setReps1RM("8");setModal1RM({nome,carga:dadoCarga.carga});}} style={{marginLeft:"auto",padding:"3px 10px",background:"rgba(102,255,240,.08)",border:"1px solid rgba(102,255,240,.25)",borderRadius:5,color:C.accent,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:11,letterSpacing:1,textTransform:"uppercase",cursor:"pointer",whiteSpace:"nowrap",flexShrink:0}}>1RM</button>)}</div>{rm&&dadoCarga.carga&&(<div style={{display:"flex",alignItems:"center",gap:8,padding:"4px 18px 8px",fontSize:11,color:C.muted}}><span>Estimativa 1RM (8×):</span><span style={{fontFamily:"'Bebas Neue',cursive",fontSize:16,color:C.accent}}>{rm}kg</span></div>)}{prog&&(<div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"8px 18px 10px",background:"rgba(34,197,94,.06)",borderBottom:`1px solid ${C.border}`}}><div style={{display:"flex",alignItems:"center",gap:8}}><span style={{fontSize:14}}>⬆️</span><div><span style={{fontSize:11,fontWeight:700,color:"#22c55e",letterSpacing:1}}>HORA DE EVOLUIR!</span><span style={{fontSize:11,color:"#666",marginLeft:6}}>Mesma carga por 3x seguidas</span></div></div><button onClick={e=>{e.stopPropagation();const novoVal=String(prog.sugerida);const novo={...cargas,[key]:{...dadoCarga,carga:novoVal}};setCargas(novo);localStorage.setItem(CARGA_KEY,JSON.stringify(novo));}} style={{padding:"4px 12px",background:"#22c55e",color:"#000",border:"none",borderRadius:5,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,fontSize:12,letterSpacing:1,cursor:"pointer",whiteSpace:"nowrap"}}>+{prog.aumento}kg → {prog.sugerida}kg</button></div>)}</>);})()}</div>);})}</div></div>))}
       <div className="card ia-section"><div className="ia-header"><div className="ia-dot"/><p className="ia-title">Personal IA</p><p className="ia-sub">Substitua exercícios e personalize seu treino</p></div><div className="chat-msgs">{msgs.map((m,i)=>(m.text==="typing"?<div key={i} className="cmsg ai typing"><span/><span/><span/></div>:<div key={i} className={`cmsg ${m.isUpdate?"update":m.role}`}>{m.text}</div>))}</div><div className="chips">{quickChips.map(c=><div key={c} className="chip" onClick={()=>send(c)}>{c}</div>)}</div><div className="chat-input-row"><input className="chat-input" placeholder="Ex: Não gosto de agachamento, o que posso substituir?" value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>e.key==="Enter"&&send()}/><button className="chat-send" onClick={()=>send()} disabled={load}>Enviar</button></div></div>
     </div>
   );
