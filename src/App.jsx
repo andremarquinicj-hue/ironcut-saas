@@ -2316,6 +2316,286 @@ function Fotos({ perfil }) {
   );
 }
 
+// ─── NOTIFICAÇÕES SERVICE WORKER ─────────────────────────────────────────────
+const NOTIF_KEY = "ic_notificacoes_config";
+
+function registrarSW() {
+  if (!("serviceWorker" in navigator)) return Promise.reject("SW não suportado");
+  return navigator.serviceWorker.register("/sw.js").then(reg => reg);
+}
+
+async function enviarMensagemSW(dados) {
+  if (!("serviceWorker" in navigator)) return;
+  const reg = await navigator.serviceWorker.ready;
+  if (reg.active) reg.active.postMessage(dados);
+}
+
+async function solicitarPermissao() {
+  if (!("Notification" in window)) return "denied";
+  if (Notification.permission === "granted") return "granted";
+  if (Notification.permission === "denied") return "denied";
+  const result = await Notification.requestPermission();
+  return result;
+}
+
+function Notificacoes() {
+  const CONFIG_DEFAULT = {
+    ativo: false,
+    horarioTreino:   "07:00",
+    horarioDieta:    "12:00",
+    horarioAgua:     "09:00",
+    horarioPeso:     "07:30",
+    lembrarTreino:   true,
+    lembrarDieta:    true,
+    lembrarAgua:     true,
+    lembrarPeso:     true,
+    frequenciaAgua:  3, // horas entre lembretes de água
+  };
+
+  const [config, setConfig] = useState(() => {
+    try { return { ...CONFIG_DEFAULT, ...JSON.parse(localStorage.getItem(NOTIF_KEY) || "{}") }; }
+    catch { return CONFIG_DEFAULT; }
+  });
+  const [permissao, setPermissao] = useState(Notification?.permission || "default");
+  const [swOk, setSwOk] = useState(false);
+  const [salvando, setSalvando] = useState(false);
+
+  useEffect(() => {
+    registrarSW().then(() => setSwOk(true)).catch(() => setSwOk(false));
+  }, []);
+
+  function upd(k, v) {
+    setConfig(p => ({ ...p, [k]: v }));
+  }
+
+  function msAte(horario) {
+    const [h, m] = horario.split(":").map(Number);
+    const agora = new Date();
+    const alvo = new Date();
+    alvo.setHours(h, m, 0, 0);
+    if (alvo <= agora) alvo.setDate(alvo.getDate() + 1); // amanhã
+    return alvo - agora;
+  }
+
+  async function salvar() {
+    setSalvando(true);
+
+    // Pede permissão se ainda não tem
+    const perm = await solicitarPermissao();
+    setPermissao(perm);
+
+    if (perm !== "granted") {
+      setSalvando(false);
+      alert("Permissão de notificação negada. Acesse as configurações do browser e ative manualmente.");
+      return;
+    }
+
+    // Cancela tudo antes de reagendar
+    await enviarMensagemSW({ tipo: "CANCELAR_TODAS" });
+
+    const novoConfig = { ...config, ativo: true };
+    setConfig(novoConfig);
+    localStorage.setItem(NOTIF_KEY, JSON.stringify(novoConfig));
+
+    // Agenda notificações
+    const notifs = [];
+
+    if (novoConfig.lembrarTreino) notifs.push({
+      id: "treino",
+      titulo: "🏋️ Hora do Treino, IRONCUT!",
+      corpo: "Seu protocolo de hoje está esperando. Vamos lá, sem desculpas! 💪",
+      delay: msAte(novoConfig.horarioTreino),
+    });
+
+    if (novoConfig.lembrarDieta) notifs.push({
+      id: "dieta",
+      titulo: "🥩 Lembrete de Refeição",
+      corpo: "Hora de seguir o cardápio. Cada refeição te aproxima do resultado. ✅",
+      delay: msAte(novoConfig.horarioDieta),
+    });
+
+    if (novoConfig.lembrarPeso) notifs.push({
+      id: "peso",
+      titulo: "⚖️ Registrar Peso",
+      corpo: "Bom dia! Registre seu peso de hoje para acompanhar a evolução.",
+      delay: msAte(novoConfig.horarioPeso),
+    });
+
+    if (novoConfig.lembrarAgua) {
+      // Lembretes de água a cada X horas a partir do horário configurado
+      const [hI, mI] = novoConfig.horarioAgua.split(":").map(Number);
+      const inicio = new Date(); inicio.setHours(hI, mI, 0, 0);
+      if (inicio <= new Date()) inicio.setDate(inicio.getDate() + 1);
+      const freq = parseInt(novoConfig.frequenciaAgua) * 3600000;
+      for (let i = 0; i < 4; i++) {
+        notifs.push({
+          id: `agua_${i}`,
+          titulo: "💧 Beba Água!",
+          corpo: `Hidratação em dia = performance máxima. Tome sua próxima garrafa agora!`,
+          delay: (inicio - new Date()) + i * freq,
+        });
+      }
+    }
+
+    for (const n of notifs) {
+      await enviarMensagemSW({ tipo: "AGENDAR_NOTIFICACAO", payload: { ...n, icone: "/logo.png" } });
+    }
+
+    setSalvando(false);
+  }
+
+  async function desativar() {
+    await enviarMensagemSW({ tipo: "CANCELAR_TODAS" });
+    const novoConfig = { ...config, ativo: false };
+    setConfig(novoConfig);
+    localStorage.setItem(NOTIF_KEY, JSON.stringify(novoConfig));
+  }
+
+  const suportado = "Notification" in window && "serviceWorker" in navigator;
+
+  return (
+    <div>
+      <div className="sec-label">Lembretes</div>
+      <p className="sec-title">🔔 NOTIFICAÇÕES</p>
+
+      {/* STATUS */}
+      <div className="card" style={{padding:"16px 20px",marginBottom:18,border:`1px solid ${config.ativo&&permissao==="granted"?"rgba(34,197,94,.3)":"rgba(255,255,255,.06)"}`}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+          <div style={{display:"flex",alignItems:"center",gap:12}}>
+            <div style={{width:10,height:10,borderRadius:"50%",background:config.ativo&&permissao==="granted"?"#22c55e":"#333",boxShadow:config.ativo&&permissao==="granted"?"0 0 8px #22c55e":"none"}}/>
+            <div>
+              <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:14,textTransform:"uppercase",letterSpacing:1}}>
+                {!suportado?"Não suportado":permissao==="denied"?"Bloqueado pelo browser":config.ativo?"Notificações ativas":"Notificações desativadas"}
+              </p>
+              <p style={{fontSize:11,color:C.muted,marginTop:2}}>
+                {!suportado?"Use Chrome/Edge ou adicione à tela inicial no iOS":
+                 permissao==="denied"?"Ative nas configurações do browser → Notificações":
+                 config.ativo?"Lembretes agendados diariamente":
+                 "Configure os horários e ative abaixo"}
+              </p>
+            </div>
+          </div>
+          {config.ativo&&permissao==="granted"&&(
+            <button onClick={desativar} style={{padding:"6px 14px",background:"transparent",border:"1px solid rgba(255,107,107,.3)",borderRadius:7,color:"#ff6b6b",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:12,letterSpacing:1,cursor:"pointer"}}>Desativar</button>
+          )}
+        </div>
+      </div>
+
+      {/* iOS AVISO */}
+      {/iphone|ipad/i.test(navigator.userAgent) && (
+        <div style={{background:"rgba(245,158,11,.06)",border:"1px solid rgba(245,158,11,.2)",borderRadius:10,padding:"14px 16px",marginBottom:18,fontSize:12,color:"#f59e0b",lineHeight:1.7}}>
+          📱 <strong>iOS:</strong> Para receber notificações no iPhone, adicione o app à tela inicial primeiro: Safari → Compartilhar → "Adicionar à Tela de Início".
+        </div>
+      )}
+
+      {/* CONFIGURAÇÕES */}
+      <div className="card" style={{padding:"20px 22px",marginBottom:18}}>
+        <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:14,textTransform:"uppercase",letterSpacing:1,marginBottom:16}}>Configurar Lembretes</p>
+
+        {/* TREINO */}
+        <div style={{padding:"14px 0",borderBottom:"1px solid #1a1a1a"}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:config.lembrarTreino?10:0}}>
+            <div style={{display:"flex",alignItems:"center",gap:10}}>
+              <span style={{fontSize:20}}>🏋️</span>
+              <div>
+                <p style={{fontSize:14,fontWeight:600}}>Lembrete de Treino</p>
+                <p style={{fontSize:11,color:C.muted}}>Hora de ir treinar</p>
+              </div>
+            </div>
+            <div onClick={()=>upd("lembrarTreino",!config.lembrarTreino)} style={{width:42,height:24,borderRadius:12,background:config.lembrarTreino?C.accent:"#333",cursor:"pointer",position:"relative",transition:"background .2s"}}>
+              <div style={{position:"absolute",top:3,left:config.lembrarTreino?21:3,width:18,height:18,borderRadius:"50%",background:"#fff",transition:"left .2s"}}/>
+            </div>
+          </div>
+          {config.lembrarTreino&&<input type="time" value={config.horarioTreino} onChange={e=>upd("horarioTreino",e.target.value)} style={{padding:"8px 12px",background:"#0D0D0D",border:"1px solid #222",borderRadius:7,color:C.accent,fontFamily:"'Barlow',sans-serif",fontSize:14,outline:"none",width:"140px"}} onFocus={e=>e.target.style.borderColor="#66FFF0"} onBlur={e=>e.target.style.borderColor="#222"}/>}
+        </div>
+
+        {/* DIETA */}
+        <div style={{padding:"14px 0",borderBottom:"1px solid #1a1a1a"}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:config.lembrarDieta?10:0}}>
+            <div style={{display:"flex",alignItems:"center",gap:10}}>
+              <span style={{fontSize:20}}>🥩</span>
+              <div>
+                <p style={{fontSize:14,fontWeight:600}}>Lembrete de Refeição</p>
+                <p style={{fontSize:11,color:C.muted}}>Seguir o cardápio</p>
+              </div>
+            </div>
+            <div onClick={()=>upd("lembrarDieta",!config.lembrarDieta)} style={{width:42,height:24,borderRadius:12,background:config.lembrarDieta?C.accent:"#333",cursor:"pointer",position:"relative",transition:"background .2s"}}>
+              <div style={{position:"absolute",top:3,left:config.lembrarDieta?21:3,width:18,height:18,borderRadius:"50%",background:"#fff",transition:"left .2s"}}/>
+            </div>
+          </div>
+          {config.lembrarDieta&&<input type="time" value={config.horarioDieta} onChange={e=>upd("horarioDieta",e.target.value)} style={{padding:"8px 12px",background:"#0D0D0D",border:"1px solid #222",borderRadius:7,color:C.accent,fontFamily:"'Barlow',sans-serif",fontSize:14,outline:"none",width:"140px"}} onFocus={e=>e.target.style.borderColor="#66FFF0"} onBlur={e=>e.target.style.borderColor="#222"}/>}
+        </div>
+
+        {/* ÁGUA */}
+        <div style={{padding:"14px 0",borderBottom:"1px solid #1a1a1a"}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:config.lembrarAgua?10:0}}>
+            <div style={{display:"flex",alignItems:"center",gap:10}}>
+              <span style={{fontSize:20}}>💧</span>
+              <div>
+                <p style={{fontSize:14,fontWeight:600}}>Lembrete de Hidratação</p>
+                <p style={{fontSize:11,color:C.muted}}>Repetido a cada X horas</p>
+              </div>
+            </div>
+            <div onClick={()=>upd("lembrarAgua",!config.lembrarAgua)} style={{width:42,height:24,borderRadius:12,background:config.lembrarAgua?C.accent:"#333",cursor:"pointer",position:"relative",transition:"background .2s"}}>
+              <div style={{position:"absolute",top:3,left:config.lembrarAgua?21:3,width:18,height:18,borderRadius:"50%",background:"#fff",transition:"left .2s"}}/>
+            </div>
+          </div>
+          {config.lembrarAgua&&(
+            <div style={{display:"flex",gap:12,alignItems:"center",flexWrap:"wrap"}}>
+              <div>
+                <p style={{fontSize:10,color:C.muted,marginBottom:4}}>Primeiro lembrete</p>
+                <input type="time" value={config.horarioAgua} onChange={e=>upd("horarioAgua",e.target.value)} style={{padding:"8px 12px",background:"#0D0D0D",border:"1px solid #222",borderRadius:7,color:C.accent,fontFamily:"'Barlow',sans-serif",fontSize:14,outline:"none",width:"140px"}} onFocus={e=>e.target.style.borderColor="#66FFF0"} onBlur={e=>e.target.style.borderColor="#222"}/>
+              </div>
+              <div>
+                <p style={{fontSize:10,color:C.muted,marginBottom:4}}>Repetir a cada</p>
+                <div style={{display:"flex",gap:6}}>
+                  {[1,2,3,4].map(h=>(
+                    <button key={h} onClick={()=>upd("frequenciaAgua",h)}
+                      style={{padding:"7px 12px",borderRadius:6,border:`1px solid ${config.frequenciaAgua===h?"rgba(102,255,240,.5)":"#2a2a2a"}`,background:config.frequenciaAgua===h?"rgba(102,255,240,.1)":"#0D0D0D",color:config.frequenciaAgua===h?C.accent:C.muted,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:12,cursor:"pointer"}}>
+                      {h}h
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* PESO */}
+        <div style={{padding:"14px 0"}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:config.lembrarPeso?10:0}}>
+            <div style={{display:"flex",alignItems:"center",gap:10}}>
+              <span style={{fontSize:20}}>⚖️</span>
+              <div>
+                <p style={{fontSize:14,fontWeight:600}}>Registrar Peso</p>
+                <p style={{fontSize:11,color:C.muted}}>Lembrete diário pela manhã</p>
+              </div>
+            </div>
+            <div onClick={()=>upd("lembrarPeso",!config.lembrarPeso)} style={{width:42,height:24,borderRadius:12,background:config.lembrarPeso?C.accent:"#333",cursor:"pointer",position:"relative",transition:"background .2s"}}>
+              <div style={{position:"absolute",top:3,left:config.lembrarPeso?21:3,width:18,height:18,borderRadius:"50%",background:"#fff",transition:"left .2s"}}/>
+            </div>
+          </div>
+          {config.lembrarPeso&&<input type="time" value={config.horarioPeso} onChange={e=>upd("horarioPeso",e.target.value)} style={{padding:"8px 12px",background:"#0D0D0D",border:"1px solid #222",borderRadius:7,color:C.accent,fontFamily:"'Barlow',sans-serif",fontSize:14,outline:"none",width:"140px"}} onFocus={e=>e.target.style.borderColor="#66FFF0"} onBlur={e=>e.target.style.borderColor="#222"}/>}
+        </div>
+      </div>
+
+      {/* BOTÃO SALVAR */}
+      <button onClick={salvar} disabled={salvando||!suportado||permissao==="denied"}
+        style={{width:"100%",padding:"15px",background:salvando||!suportado||permissao==="denied"?"rgba(102,255,240,.1)":"linear-gradient(135deg,#00D4C8,#66FFF0)",color:salvando||!suportado||permissao==="denied"?"#66FFF0":"#000",border:"none",borderRadius:10,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,fontSize:16,letterSpacing:2,textTransform:"uppercase",cursor:salvando||!suportado||permissao==="denied"?"not-allowed":"pointer",transition:"all .2s"}}>
+        {salvando?"⏳ Ativando...":"🔔 Ativar Notificações"}
+      </button>
+
+      {/* INFO */}
+      <div style={{marginTop:16,padding:"14px 16px",background:"rgba(0,0,0,.3)",border:"1px solid #1a1a1a",borderRadius:10,fontSize:11,color:C.muted,lineHeight:1.8}}>
+        <p style={{fontWeight:700,color:C.lgray,marginBottom:4}}>ℹ️ Como funciona</p>
+        <p>• As notificações são agendadas diariamente nos horários configurados.</p>
+        <p>• Para reagendar (ex: mudar horário), clique em <strong style={{color:C.accent}}>Ativar</strong> novamente.</p>
+        <p>• No iPhone, adicione o app à tela inicial para receber notificações com o app fechado.</p>
+      </div>
+    </div>
+  );
+}
+
 // ─── DEMO PERFIL ─────────────────────────────────────────────────────────────
 const DEMO_PERFIL={nome:"Carlos Mendes",email:"demo@ironcut.app",senha:"demo123",objetivo:"fat",sexo:"masculino",idade:"34",peso:"92",altura:"178",nivelAtividade:"Moderadamente ativo (3-4x/semana)",localTreino:"Academia completa",restricoes:[],condicoes:["Nenhuma"]};
 
@@ -2346,6 +2626,9 @@ export default function App() {
   }
 
   useEffect(()=>{
+    // Registrar Service Worker para notificações
+    registrarSW().catch(()=>{});
+
     const sess=getSession();
     if(sess){
       (async()=>{
@@ -2423,6 +2706,7 @@ export default function App() {
     {id:"medidas",  icon:"📏",label:"Medidas"},
     {id:"fotos",    icon:"📸",label:"Progresso"},
     {id:"esporte",  icon:"⚡",label:"Esporte"},
+    {id:"notif",    icon:"🔔",label:"Lembretes"},
     {id:"perfil",   icon:"👤",label:"Perfil"},
   ];
 
@@ -2474,6 +2758,7 @@ export default function App() {
             {aba==="medidas"&&<Medidas perfil={perfil} pesosLog={pesosLog} onPesoIdealAtualizado={v=>setPesoIdealReal(v)}/>}
             {aba==="fotos"&&<Fotos perfil={perfil}/>}
             {aba==="esporte"&&<Esporte perfil={perfil}/>}
+            {aba==="notif"&&<Notificacoes/>}
             {aba==="perfil"&&<Perfil perfil={perfil} onLogout={onLogout} onAtualizarDados={novoPerfil=>{setPerfil(novoPerfil);syncStorage(novoPerfil,proto,pesosLog,aguaLog);}} onRefazerProtocolo={async(novoPerfil)=>{
               setLoading(true);
               const novoProto=await gerarProtocolo(novoPerfil);
