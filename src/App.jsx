@@ -230,10 +230,10 @@ body { background: ${C.bg}; color: ${C.text}; font-family: 'Barlow', sans-serif;
 @media(max-width:768px){
   .sidebar { display:none; }
   .mob-header { display:flex; align-items:center; justify-content:space-between; padding:14px 16px; background:${C.surface}; border-bottom:1px solid ${C.border}; margin-bottom:14px; }
-  .mob-nav { display:flex; justify-content:space-around; position:fixed; bottom:0; left:0; right:0; background:${C.surface}; border-top:1px solid ${C.border}; padding:8px 0 14px; z-index:50; }
-  .mob-nav-btn { display:flex; flex-direction:column; align-items:center; gap:2px; font-family:'Barlow Condensed',sans-serif; font-size:10px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:${C.muted}; cursor:pointer; padding:4px 12px; background:none; border:none; }
+  .mob-nav { display:flex; justify-content:space-around; position:fixed; bottom:0; left:0; right:0; background:${C.surface}; border-top:1px solid ${C.border}; padding:6px 0 10px; z-index:50; }
+  .mob-nav-btn { display:flex; flex-direction:column; align-items:center; gap:1px; font-family:'Barlow Condensed',sans-serif; font-size:8px; font-weight:700; letter-spacing:.5px; text-transform:uppercase; color:${C.muted}; cursor:pointer; padding:2px 6px; background:none; border:none; min-width:0; flex:1; }
   .mob-nav-btn.on { color:${C.accent}; }
-  .mcontent { padding:14px 14px 80px; }
+  .mcontent { padding:14px 14px 72px; }
   .dash-grid { grid-template-columns:1fr 1fr; gap:10px; }
   .week-grid { grid-template-columns:1fr; }
   .meal-grid { grid-template-columns:1fr; }
@@ -2773,7 +2773,7 @@ export default function App() {
           </div>
 
           <div className="mob-nav">
-            {navItems.map(n=>(<button key={n.id} className={`mob-nav-btn${aba===n.id?" on":""}`} onClick={()=>setAba(n.id)}><span style={{fontSize:20}}>{n.icon}</span>{n.label}</button>))}
+            {navItems.map(n=>(<button key={n.id} className={`mob-nav-btn${aba===n.id?" on":""}`} onClick={()=>setAba(n.id)}><span style={{fontSize:16}}>{n.icon}</span>{n.label}</button>))}
           </div>
         </div>
       )}
