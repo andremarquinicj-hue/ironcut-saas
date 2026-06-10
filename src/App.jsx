@@ -1325,6 +1325,18 @@ export default function App() {
   const [checkLog,setCheckLog]=useState({});
   const [pesoIdealReal,setPesoIdealReal]=useState(null);
 
+  // Lê o histórico de medidas do localStorage e retorna o peso ideal calculado
+  function carregarPesoIdealSalvo(email, pesoAtual, objetivo, sexo) {
+    try {
+      const hist = JSON.parse(localStorage.getItem(`ic_medidas_${email}`) || "[]");
+      if (!hist.length) return null;
+      const ultimo = hist[hist.length - 1];
+      if (!ultimo.pct) return null;
+      const info = pesoIdealPorGordura(pesoAtual, ultimo.pct, objetivo, sexo);
+      return info.ideal;
+    } catch { return null; }
+  }
+
   useEffect(()=>{
     const sess=getSession();
     if(sess){
@@ -1334,14 +1346,20 @@ export default function App() {
           const liberado=await verificarComprador(sess.email).catch(()=>true);
           setPerfil(conta.perfil);setProto(conta.protocolo);setPesos(conta.pesosLog||[]);
           const savedCheck1=JSON.parse(localStorage.getItem(`ic_check_${conta.perfil.email}`)||"{}");
-          setCheckLog(savedCheck1);setAguaLog(conta.aguaLog||{});setBloqueado(!liberado);setTela("app");
+          setCheckLog(savedCheck1);setAguaLog(conta.aguaLog||{});setBloqueado(!liberado);
+          const pesoAtual1=(conta.pesosLog||[]).length?conta.pesosLog[conta.pesosLog.length-1].val:parseFloat(conta.perfil.peso);
+          setPesoIdealReal(carregarPesoIdealSalvo(conta.perfil.email,pesoAtual1,conta.perfil.objetivo,conta.perfil.sexo));
+          setTela("app");
         } else {
           const c=getContas();
           if(c[sess.email]&&c[sess.email].senha===sess.senha){
             const liberado=await verificarComprador(sess.email).catch(()=>true);
             setPerfil(c[sess.email].perfil);
             const savedCheck2=JSON.parse(localStorage.getItem(`ic_check_${c[sess.email].perfil.email}`)||"{}");
-            setCheckLog(savedCheck2);setProto(c[sess.email].protocolo);setPesos(c[sess.email].pesosLog||[]);setAguaLog(c[sess.email].aguaLog||{});setBloqueado(!liberado);setTela("app");
+            setCheckLog(savedCheck2);setProto(c[sess.email].protocolo);setPesos(c[sess.email].pesosLog||[]);setAguaLog(c[sess.email].aguaLog||{});setBloqueado(!liberado);
+            const pesoAtual2=(c[sess.email].pesosLog||[]).length?c[sess.email].pesosLog[c[sess.email].pesosLog.length-1].val:parseFloat(c[sess.email].perfil.peso);
+            setPesoIdealReal(carregarPesoIdealSalvo(c[sess.email].perfil.email,pesoAtual2,c[sess.email].perfil.objetivo,c[sess.email].perfil.sexo));
+            setTela("app");
           }
         }
       })();
@@ -1350,7 +1368,12 @@ export default function App() {
 
   function syncStorage(p,pr,pl,al){const dados={senha:p.senha||"",perfil:p,protocolo:pr,pesosLog:pl,aguaLog:al};saveContaFirebase(p.email,dados).catch(()=>{});}
   function onCadastro(p,pr,pl,al){setPerfil(p);setProto(pr);setPesos(pl);setAguaLog(al);setBloqueado(false);setTela("app");}
-  function onLogin(p,pr,pl,al,comprou=true){setPerfil(p);setProto(pr);setPesos(pl);setAguaLog(al);setBloqueado(!comprou);setLogin(false);setTela("app");}
+  function onLogin(p,pr,pl,al,comprou=true){
+    setPerfil(p);setProto(pr);setPesos(pl);setAguaLog(al);setBloqueado(!comprou);setLogin(false);
+    const pesoAtualLogin=pl.length?pl[pl.length-1].val:parseFloat(p.peso);
+    setPesoIdealReal(carregarPesoIdealSalvo(p.email,pesoAtualLogin,p.objetivo,p.sexo));
+    setTela("app");
+  }
   function onLogout(){clearSession();setPerfil(null);setProto(null);setPesos([]);setAguaLog({});setBloqueado(false);setTela("landing");}
 
   function addPeso(v){
