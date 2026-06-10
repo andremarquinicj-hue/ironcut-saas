@@ -1321,7 +1321,18 @@ function Treinos({ protocolo, perfil, onUpdateProtocolo }) {
     if (treinoAtivo?.fase === "descanso" && timer === 0) {
       setTreinoAtivo(p => p ? {...p, fase:"execucao"} : p);
     }
-  }, [timer]);if(!val.trim())return;const key=`${dia}-${idx}`;const atual=cargas[key]||{carga:"",historico:[]};const hist=atual.historico.filter(h=>h!==val).slice(-4);hist.push(val);const novo={...cargas,[key]:{carga:val,historico:hist}};setCargas(novo);localStorage.setItem(CARGA_KEY,JSON.stringify(novo));}
+  }, [timer]);
+
+  function salvarCarga(dia, idx, val) {
+    if(!val.trim())return;
+    const key=`${dia}-${idx}`;
+    const atual=cargas[key]||{carga:"",historico:[]};
+    const hist=atual.historico.filter(h=>h!==val).slice(-4);
+    hist.push(val);
+    const novo={...cargas,[key]:{carga:val,historico:hist}};
+    setCargas(novo);
+    localStorage.setItem(CARGA_KEY,JSON.stringify(novo));
+  }
 
   function sugestaoProgressao(key){
     const dado=cargas[key]||{carga:"",historico:[]};
