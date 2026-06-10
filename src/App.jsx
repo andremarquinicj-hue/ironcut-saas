@@ -1306,14 +1306,15 @@ function Treinos({ protocolo, perfil, onUpdateProtocolo }) {
       <div className="week-grid">{dias.map(([dia,info])=>{
 
         function getImagemMusculo(nome) {
-          const n = nome.toLowerCase();
-          if(n.includes("peito"))                                                    return "/Peito.png";
-          if(n.includes("costas")||n.includes("bíceps")||n.includes("biceps"))      return "/Costa_.png";
-          if(n.includes("perna")||n.includes("quadrícep")||n.includes("glúteo")||n.includes("posterior")||n.includes("lower")) return "/Perna.png";
-          if(n.includes("ombro")||n.includes("trapézio")||n.includes("trapezio"))   return "/Ombro.png";
+          const n = nome.toLowerCase()
+            .normalize("NFD").replace(/[\u0300-\u036f]/g,""); // remove acentos
+          if(n.includes("peito"))                                                     return "/Peito.png";
+          if(n.includes("costas"))                                                    return "/Costa_.png";
+          if(n.includes("perna")||n.includes("quadricep")||n.includes("gluteo")||n.includes("posterior")||n.includes("lower")) return "/Perna.png";
+          if(n.includes("ombro")||n.includes("trapezio"))                             return "/Ombro.png";
           if(n.includes("hiit")||n.includes("cardio")||n.includes("core")||n.includes("abdominal")||n.includes("mobilidade")) return "/Abdomen.png";
-          if(n.includes("tríceps")||n.includes("triceps")||n.includes("bíceps")||n.includes("biceps")||n.includes("upper")) return "/Biceps_e_triceps.png";
-          if(n.includes("descanso"))                                                 return "/Descanso.png";
+          if(n.includes("biceps")||n.includes("triceps")||n.includes("upper"))        return "/Biceps_e_triceps.png";
+          if(n.includes("descanso"))                                                  return "/Descanso.png";
           return "/Peito.png";
         }
 
