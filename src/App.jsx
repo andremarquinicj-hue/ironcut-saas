@@ -915,25 +915,67 @@ function Dieta({ protocolo, perfil, onUpdateProtocolo }) {
 }
 
 // ─── PERFIL ───────────────────────────────────────────────────────────────────
-function Perfil({ perfil, onLogout, onRefazerProtocolo }) {
+function Perfil({ perfil, onLogout, onRefazerProtocolo, onAtualizarDados }) {
   const [modal,setModal]=useState(false);
+  const [modalDados,setModalDados]=useState(false);
   const [novoObj,setNovoObj]=useState(perfil.objetivo);
   const [novaAtiv,setNovaAtiv]=useState(perfil.nivelAtividade);
   const [novoLocal,setNovoLocal]=useState(perfil.localTreino);
+  // Campos editáveis de dados pessoais
+  const [editNome,setEditNome]=useState(perfil.nome);
+  const [editAltura,setEditAltura]=useState(perfil.altura);
+  const [editIdade,setEditIdade]=useState(perfil.idade);
+  const [editPeso,setEditPeso]=useState(perfil.peso);
+
   const isMassa=perfil.objetivo==="massa";
   const ideal=pesoIdeal(perfil.altura,perfil.sexo);
   const imc=calcIMC(perfil.peso,perfil.altura);
-  const rows=[["Nome",perfil.nome],["E-mail",perfil.email],["Sexo",perfil.sexo.charAt(0).toUpperCase()+perfil.sexo.slice(1)],["Idade",`${perfil.idade} anos`],["Altura",`${perfil.altura}cm`],["Peso Inicial",`${perfil.peso}kg`],["IMC Inicial",`${imc} — ${clsIMC(parseFloat(imc))}`],["Peso Ideal",`${ideal}kg`],["Nível de Atividade",perfil.nivelAtividade],["Local de Treino",perfil.localTreino]];
+  const rows=[["Nome",perfil.nome],["E-mail",perfil.email],["Sexo",perfil.sexo.charAt(0).toUpperCase()+perfil.sexo.slice(1)],["Idade",`${perfil.idade} anos`],["Altura",`${perfil.altura}cm`],["Peso Inicial",`${perfil.peso}kg`],["IMC",`${imc} — ${clsIMC(parseFloat(imc))}`],["Peso Ideal",`${ideal}kg`],["Nível de Atividade",perfil.nivelAtividade],["Local de Treino",perfil.localTreino]];
+
   return(
     <div>
       <div className="sec-label">Meu Perfil</div>
       <p className="sec-title">DADOS <span style={{color:C.accent}}>PESSOAIS</span></p>
       <div style={{marginBottom:14}}><span className={`badge ${isMassa?"badge-mass":"badge-fat"}`} style={{fontSize:14,padding:"6px 16px"}}>{isMassa?"💪 Objetivo: Ganho de Massa":"🔥 Objetivo: Emagrecimento"}</span></div>
-      <div className="card" style={{padding:"6px 20px",marginBottom:14}}>{rows.map(([l,v])=>(<div key={l} className="perfil-row"><span className="pr-label">{l}</span><span className="pr-val">{v}</span></div>))}{perfil.restricoes?.length>0&&(<div className="perfil-row"><span className="pr-label">Restrições</span><span className="pr-val">{perfil.restricoes.join(", ")}</span></div>)}</div>
+      <div className="card" style={{padding:"6px 20px",marginBottom:14}}>
+        {rows.map(([l,v])=>(<div key={l} className="perfil-row"><span className="pr-label">{l}</span><span className="pr-val">{v}</span></div>))}
+        {perfil.restricoes?.length>0&&(<div className="perfil-row"><span className="pr-label">Restrições</span><span className="pr-val">{perfil.restricoes.join(", ")}</span></div>)}
+      </div>
       <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
         <button className="btn btn-accent" onClick={()=>setModal(true)}>🔄 Refazer Protocolo</button>
+        <button className="btn btn-outline" onClick={()=>{setEditNome(perfil.nome);setEditAltura(perfil.altura);setEditIdade(perfil.idade);setEditPeso(perfil.peso);setModalDados(true);}}>✏️ Editar Dados</button>
         <button className="btn btn-outline" onClick={onLogout}>Sair da Conta</button>
       </div>
+
+      {/* MODAL EDITAR DADOS PESSOAIS */}
+      {modalDados&&(
+        <div className="modal"><div className="modal-box">
+          <p className="cad-title">EDITAR <span>DADOS</span></p>
+          <p className="cad-sub">Atualize seus dados pessoais. Isso afeta o cálculo de IMC, hidratação e composição corporal.</p>
+          <div className="field"><label>Nome</label><input placeholder="Seu nome" value={editNome} onChange={e=>setEditNome(e.target.value)}/></div>
+          <div className="fields-row">
+            <div className="field"><label>Altura (cm)</label><input type="number" placeholder="Ex: 175" value={editAltura} onChange={e=>setEditAltura(e.target.value)}/></div>
+            <div className="field"><label>Idade</label><input type="number" placeholder="Ex: 28" value={editIdade} onChange={e=>setEditIdade(e.target.value)}/></div>
+          </div>
+          <div className="field"><label>Peso de Referência (kg)</label><input type="number" placeholder="Ex: 85" value={editPeso} onChange={e=>setEditPeso(e.target.value)}/><p style={{fontSize:10,color:C.muted,marginTop:4}}>⚠️ Isso altera o peso inicial do gráfico. Para registrar pesagens use o Dashboard.</p></div>
+          {editAltura&&editPeso&&(()=>{
+            const imcNovo=calcIMC(editPeso,editAltura);
+            const idealNovo=pesoIdeal(editAltura,perfil.sexo);
+            return(<div className="imc-result"><div className="imc-row"><span style={{color:C.muted}}>Novo IMC</span><span className="imc-val">{imcNovo}</span></div><div className="imc-row"><span style={{color:C.muted}}>Classificação</span><span style={{fontWeight:700,color:C.text}}>{clsIMC(parseFloat(imcNovo))}</span></div><div className="imc-row" style={{marginBottom:0}}><span style={{color:C.muted}}>Peso Ideal</span><span style={{fontWeight:700,color:C.accent}}>{idealNovo}kg</span></div></div>);
+          })()}
+          <div style={{display:"flex",gap:10,marginTop:20}}>
+            <button className="btn btn-accent" style={{flex:1}} onClick={()=>{
+              if(!editNome||!editAltura||!editIdade||!editPeso){alert("Preencha todos os campos.");return;}
+              if(parseFloat(editAltura)<100||parseFloat(editAltura)>250){alert("Altura inválida.");return;}
+              onAtualizarDados({...perfil,nome:editNome,altura:editAltura,idade:editIdade,peso:editPeso});
+              setModalDados(false);
+            }}>💾 Salvar</button>
+            <button className="btn btn-outline" onClick={()=>setModalDados(false)}>Cancelar</button>
+          </div>
+        </div></div>
+      )}
+
+      {/* MODAL REFAZER PROTOCOLO */}
       {modal&&(<div className="modal"><div className="modal-box"><p className="cad-title">REFAZER <span>PROTOCOLO</span></p><p className="cad-sub">Atualize seu objetivo e seu plano será regenerado!</p><div className="field"><label>Novo Objetivo</label><div className="goal-grid"><div className={`goal-card${novoObj==="fat"?" sel-fat":""}`} onClick={()=>setNovoObj("fat")}><div className="gi">🔥</div><div className="gn">Emagrecer</div><div className="gd">Déficit calórico e definição</div></div><div className={`goal-card${novoObj==="massa"?" sel-mass":""}`} onClick={()=>setNovoObj("massa")}><div className="gi">💪</div><div className="gn">Ganhar Massa</div><div className="gd">Hipertrofia e superávit</div></div></div></div><div className="field"><label>Nível de Atividade</label><select value={novaAtiv} onChange={e=>setNovaAtiv(e.target.value)}>{Object.keys(ATIVIDADE).map(k=><option key={k} value={k}>{k}</option>)}</select></div><div className="field"><label>Local de Treino</label><div className="pill-group">{["Academia completa","Academia básica","Em casa","Ao ar livre"].map(l=>(<div key={l} className={`pill${novoLocal===l?" sel":""}`} onClick={()=>setNovoLocal(l)}>{l}</div>))}</div></div><div style={{display:"flex",gap:10,marginTop:20}}><button className="btn btn-accent" style={{flex:1}} onClick={()=>{onRefazerProtocolo({...perfil,objetivo:novoObj,nivelAtividade:novaAtiv,localTreino:novoLocal});setModal(false);}}>🔥 Gerar Novo Protocolo</button><button className="btn btn-outline" onClick={()=>setModal(false)}>Cancelar</button></div></div></div>)}
     </div>
   );
@@ -1399,7 +1441,7 @@ export default function App() {
             {aba==="dieta"&&proto&&<Dieta protocolo={proto} perfil={perfil} onUpdateProtocolo={p=>{setProto(p);syncStorage(perfil,p,pesosLog,aguaLog);}}/>}
             {aba==="medidas"&&<Medidas perfil={perfil} pesosLog={pesosLog} onPesoIdealAtualizado={v=>setPesoIdealReal(v)}/>}
             {aba==="esporte"&&<Esporte perfil={perfil}/>}
-            {aba==="perfil"&&<Perfil perfil={perfil} onLogout={onLogout} onRefazerProtocolo={async(novoPerfil)=>{
+            {aba==="perfil"&&<Perfil perfil={perfil} onLogout={onLogout} onAtualizarDados={novoPerfil=>{setPerfil(novoPerfil);syncStorage(novoPerfil,proto,pesosLog,aguaLog);}} onRefazerProtocolo={async(novoPerfil)=>{
               setLoading(true);
               const novoProto=await gerarProtocolo(novoPerfil);
               setPerfil(novoPerfil);setProto(novoProto);
