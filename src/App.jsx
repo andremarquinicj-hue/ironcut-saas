@@ -1307,15 +1307,15 @@ function Treinos({ protocolo, perfil, onUpdateProtocolo }) {
 
         function getImagemMusculo(nome) {
           const n = nome.toLowerCase()
-            .normalize("NFD").replace(/[\u0300-\u036f]/g,""); // remove acentos
-          if(n.includes("peito"))                                                     return "/Peito.png";
-          if(n.includes("costas"))                                                    return "/Costa_.png";
-          if(n.includes("perna")||n.includes("quadricep")||n.includes("gluteo")||n.includes("posterior")||n.includes("lower")) return "/Perna.png";
-          if(n.includes("ombro")||n.includes("trapezio"))                             return "/Ombro.png";
-          if(n.includes("hiit")||n.includes("cardio")||n.includes("core")||n.includes("abdominal")||n.includes("mobilidade")) return "/Abdomen.png";
-          if(n.includes("biceps")||n.includes("triceps")||n.includes("upper"))        return "/Biceps_e_triceps.png";
-          if(n.includes("descanso"))                                                  return "/Descanso.png";
-          return "/Peito.png";
+            .normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+          if(n.includes("costas"))                                                     return "/musculo-costas.png";
+          if(n.includes("peito"))                                                      return "/musculo-peito.png";
+          if(n.includes("perna")||n.includes("quadricep")||n.includes("gluteo")||n.includes("posterior")||n.includes("lower")) return "/musculo-perna.png";
+          if(n.includes("ombro")||n.includes("trapezio"))                              return "/musculo-ombro.png";
+          if(n.includes("hiit")||n.includes("cardio")||n.includes("core")||n.includes("abdominal")||n.includes("mobilidade")) return "/musculo-abdomen.png";
+          if(n.includes("biceps")||n.includes("triceps")||n.includes("upper"))         return "/musculo-braco.png";
+          if(n.includes("descanso"))                                                   return "/musculo-descanso.png";
+          return "/musculo-peito.png";
         }
 
         return(
