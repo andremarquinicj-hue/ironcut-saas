@@ -784,6 +784,56 @@ function Treinos({ protocolo, perfil, onUpdateProtocolo }) {
   const CARGA_KEY=`ic_cargas_${perfil.email}`;
   const [cargas,setCargas]=useState(()=>{try{return JSON.parse(localStorage.getItem(CARGA_KEY)||"{}");}catch{return{};}});
 
+  // ── TEMPORIZADOR DE DESCANSO ─────────────────────────────────────────────
+  const [timer, setTimer] = useState(null);        // segundos restantes ou null
+  const [timerTotal, setTimerTotal] = useState(60); // total configurado
+  const [timerAtivo, setTimerAtivo] = useState(false);
+  const [timerExercicio, setTimerExercicio] = useState("");
+  const timerRef = useEffect;
+
+  useEffect(() => {
+    if (!timerAtivo || timer === null) return;
+    if (timer <= 0) {
+      setTimerAtivo(false);
+      // Vibrar se suportado
+      if (navigator.vibrate) navigator.vibrate([300, 100, 300]);
+      // Notificação sonora via AudioContext
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        [880, 1108, 1318].forEach((freq, i) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.connect(gain); gain.connect(ctx.destination);
+          osc.frequency.value = freq;
+          osc.type = "sine";
+          gain.gain.setValueAtTime(0.3, ctx.currentTime + i * 0.18);
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.18 + 0.4);
+          osc.start(ctx.currentTime + i * 0.18);
+          osc.stop(ctx.currentTime + i * 0.18 + 0.4);
+        });
+      } catch {}
+      return;
+    }
+    const id = setTimeout(() => setTimer(t => t - 1), 1000);
+    return () => clearTimeout(id);
+  }, [timer, timerAtivo]);
+
+  function iniciarTimer(segundos, exercicio) {
+    setTimer(segundos);
+    setTimerTotal(segundos);
+    setTimerAtivo(true);
+    setTimerExercicio(exercicio);
+  }
+  function pausarTimer() { setTimerAtivo(false); }
+  function retormarTimer() { if (timer > 0) setTimerAtivo(true); }
+  function resetarTimer() { setTimer(timerTotal); setTimerAtivo(false); }
+
+  const timerPct = timer !== null ? Math.round((timer / timerTotal) * 100) : 100;
+  const timerCor = timer !== null
+    ? (timer > timerTotal * 0.5 ? "#22c55e" : timer > timerTotal * 0.25 ? "#f59e0b" : "#ff6b6b")
+    : C.accent;
+  const formatTimer = s => `${Math.floor(s/60)}:${String(s%60).padStart(2,"0")}`;
+
   function salvarCarga(dia,idx,val){if(!val.trim())return;const key=`${dia}-${idx}`;const atual=cargas[key]||{carga:"",historico:[]};const hist=atual.historico.filter(h=>h!==val).slice(-4);hist.push(val);const novo={...cargas,[key]:{carga:val,historico:hist}};setCargas(novo);localStorage.setItem(CARGA_KEY,JSON.stringify(novo));}
 
   function sugestaoProgressao(key){
@@ -815,8 +865,51 @@ function Treinos({ protocolo, perfil, onUpdateProtocolo }) {
     <div>
       <div className="sec-label">Protocolo de Treinos</div>
       <p className="sec-title">TREINOS {perfil.objetivo==="massa"?"HIPERTROFIA":"IRONCUT"}</p>
+
+      {/* ── TEMPORIZADOR FIXO NO TOPO ── */}
+      <div className="card" style={{padding:"16px 20px",marginBottom:18,border:`1px solid ${timer===0?"rgba(102,255,240,.4)":timerAtivo?"rgba(34,197,94,.3)":"rgba(255,255,255,.08)"}`}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+          <div>
+            <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:13,textTransform:"uppercase",letterSpacing:1,color:C.muted}}>⏱️ Descanso Entre Séries</p>
+            {timerExercicio&&<p style={{fontSize:11,color:C.accent,marginTop:2}}>{timerExercicio}</p>}
+          </div>
+          <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:42,lineHeight:1,color:timer===0?"#66FFF0":timerCor,textShadow:timerAtivo?`0 0 20px ${timerCor}60`:"none",transition:"color .3s"}}>
+            {timer!==null ? (timer===0?"✓ PRONTO!":formatTimer(timer)) : "--:--"}
+          </div>
+        </div>
+
+        {/* Barra de progresso circular via SVG linear */}
+        {timer !== null && timer > 0 && (
+          <div style={{height:6,background:"#1a1a1a",borderRadius:3,overflow:"hidden",marginBottom:12}}>
+            <div style={{height:"100%",width:`${timerPct}%`,background:`linear-gradient(90deg,${timerCor},${timerCor})`,borderRadius:3,transition:"width 1s linear",boxShadow:`0 0 8px ${timerCor}60`}}/>
+          </div>
+        )}
+        {timer===0&&(
+          <div style={{height:6,background:"rgba(102,255,240,.3)",borderRadius:3,marginBottom:12,animation:"pulse 1s ease-in-out infinite"}}/>
+        )}
+
+        {/* Botões de tempo rápido */}
+        <div style={{display:"flex",gap:6,marginBottom:10,flexWrap:"wrap"}}>
+          {[["30s",30],["45s",45],["1min",60],["90s",90],["2min",120],["3min",180]].map(([label,seg])=>(
+            <button key={label} onClick={()=>iniciarTimer(seg, timerExercicio)}
+              style={{padding:"5px 12px",borderRadius:6,border:`1px solid ${timer!==null&&timerTotal===seg?"rgba(102,255,240,.5)":"#2a2a2a"}`,background:timer!==null&&timerTotal===seg?"rgba(102,255,240,.1)":"#0D0D0D",color:timer!==null&&timerTotal===seg?C.accent:C.muted,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:12,letterSpacing:1,cursor:"pointer",transition:"all .2s"}}>
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {/* Controles */}
+        <div style={{display:"flex",gap:8}}>
+          {timerAtivo
+            ? <button onClick={pausarTimer} style={{flex:1,padding:"9px",background:"rgba(245,158,11,.15)",border:"1px solid rgba(245,158,11,.3)",borderRadius:7,color:"#f59e0b",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,fontSize:13,letterSpacing:1.5,textTransform:"uppercase",cursor:"pointer"}}>⏸ Pausar</button>
+            : <button onClick={retormarTimer} disabled={timer===null||timer===0} style={{flex:1,padding:"9px",background:timer===null||timer===0?"rgba(255,255,255,.04)":"rgba(34,197,94,.15)",border:`1px solid ${timer===null||timer===0?"#1a1a1a":"rgba(34,197,94,.3)"}`,borderRadius:7,color:timer===null||timer===0?C.muted:"#22c55e",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,fontSize:13,letterSpacing:1.5,textTransform:"uppercase",cursor:timer===null||timer===0?"not-allowed":"pointer"}}>▶ Retomar</button>
+          }
+          <button onClick={resetarTimer} disabled={timer===null} style={{padding:"9px 16px",background:"transparent",border:"1px solid #2a2a2a",borderRadius:7,color:C.muted,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:12,cursor:"pointer"}}>↺ Reset</button>
+        </div>
+      </div>
+
       <div className="week-grid">{dias.map(([dia,info])=>(<div key={dia} className="card wcard"><div className="wcard-n">{dia}</div><div className="wcard-name">{info.nome}</div><div className="wcard-desc">{info.ex.length} exercícios</div></div>))}</div>
-      {dias.map(([dia,info])=>(<div key={dia} style={{marginBottom:16}}><p style={{fontFamily:"'Barlow Condensed'",fontWeight:700,fontSize:15,textTransform:"uppercase",letterSpacing:1,marginBottom:8,color:C.accent}}>{dia} — {info.nome}</p><div className="treino-list card">{info.ex.map(([nome,sets],i)=>{const key=`${dia}-${i}`;const dadoCarga=cargas[key]||{carga:"",historico:[]};return(<div key={i}><div className="treino-item"><div className="treino-num">{String(i+1).padStart(2,"0")}</div><div className="treino-name">{nome}</div><div className="treino-sets">{sets}</div></div>{(()=>{const prog=sugestaoProgressao(key);return(<><div className="carga-row"><span className="carga-label">Carga:</span><input className="carga-input" type="number" placeholder="0" value={dadoCarga.carga} onChange={e=>{const novo={...cargas,[key]:{...dadoCarga,carga:e.target.value}};setCargas(novo);localStorage.setItem(CARGA_KEY,JSON.stringify(novo));}} onBlur={e=>salvarCarga(dia,i,e.target.value)}/><span className="carga-unit">kg</span>{dadoCarga.historico.length>1&&(<div className="carga-hist"><span style={{fontSize:10,color:"#444",marginRight:2}}>Histórico:</span>{dadoCarga.historico.slice(0,-1).slice(-3).map((h,j)=>(<span key={j} className="carga-hist-item">{h}kg</span>))}</div>)}</div>{prog&&(<div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"8px 18px 10px",background:"rgba(34,197,94,.06)",borderBottom:`1px solid ${C.border}`}}><div style={{display:"flex",alignItems:"center",gap:8}}><span style={{fontSize:14}}>⬆️</span><div><span style={{fontSize:11,fontWeight:700,color:"#22c55e",letterSpacing:1}}>HORA DE EVOLUIR!</span><span style={{fontSize:11,color:"#666",marginLeft:6}}>Mesma carga por 3x seguidas</span></div></div><button onClick={()=>{const novoVal=String(prog.sugerida);const novo={...cargas,[key]:{...dadoCarga,carga:novoVal}};setCargas(novo);localStorage.setItem(CARGA_KEY,JSON.stringify(novo));}} style={{padding:"4px 12px",background:"#22c55e",color:"#000",border:"none",borderRadius:5,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,fontSize:12,letterSpacing:1,cursor:"pointer",whiteSpace:"nowrap"}}>+{prog.aumento}kg → {prog.sugerida}kg</button></div>)}</>);})()}</div>);})}</div></div>))}
+      {dias.map(([dia,info])=>(<div key={dia} style={{marginBottom:16}}><p style={{fontFamily:"'Barlow Condensed'",fontWeight:700,fontSize:15,textTransform:"uppercase",letterSpacing:1,marginBottom:8,color:C.accent}}>{dia} — {info.nome}</p><div className="treino-list card">{info.ex.map(([nome,sets],i)=>{const key=`${dia}-${i}`;const dadoCarga=cargas[key]||{carga:"",historico:[]};return(<div key={i}><div className="treino-item" style={{cursor:"pointer"}} onClick={()=>iniciarTimer(timerTotal||60, nome)}><div className="treino-num">{String(i+1).padStart(2,"0")}</div><div className="treino-name">{nome}</div><div style={{display:"flex",alignItems:"center",gap:8}}><div className="treino-sets">{sets}</div><span style={{fontSize:10,color:"#444",fontFamily:"'Barlow Condensed',sans-serif",letterSpacing:1}}>▶ INICIAR</span></div></div>{(()=>{const prog=sugestaoProgressao(key);return(<><div className="carga-row"><span className="carga-label">Carga:</span><input className="carga-input" type="number" placeholder="0" value={dadoCarga.carga} onChange={e=>{const novo={...cargas,[key]:{...dadoCarga,carga:e.target.value}};setCargas(novo);localStorage.setItem(CARGA_KEY,JSON.stringify(novo));}} onBlur={e=>salvarCarga(dia,i,e.target.value)} onClick={e=>e.stopPropagation()}/><span className="carga-unit">kg</span>{dadoCarga.historico.length>1&&(<div className="carga-hist"><span style={{fontSize:10,color:"#444",marginRight:2}}>Histórico:</span>{dadoCarga.historico.slice(0,-1).slice(-3).map((h,j)=>(<span key={j} className="carga-hist-item">{h}kg</span>))}</div>)}</div>{prog&&(<div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"8px 18px 10px",background:"rgba(34,197,94,.06)",borderBottom:`1px solid ${C.border}`}}><div style={{display:"flex",alignItems:"center",gap:8}}><span style={{fontSize:14}}>⬆️</span><div><span style={{fontSize:11,fontWeight:700,color:"#22c55e",letterSpacing:1}}>HORA DE EVOLUIR!</span><span style={{fontSize:11,color:"#666",marginLeft:6}}>Mesma carga por 3x seguidas</span></div></div><button onClick={e=>{e.stopPropagation();const novoVal=String(prog.sugerida);const novo={...cargas,[key]:{...dadoCarga,carga:novoVal}};setCargas(novo);localStorage.setItem(CARGA_KEY,JSON.stringify(novo));}} style={{padding:"4px 12px",background:"#22c55e",color:"#000",border:"none",borderRadius:5,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,fontSize:12,letterSpacing:1,cursor:"pointer",whiteSpace:"nowrap"}}>+{prog.aumento}kg → {prog.sugerida}kg</button></div>)}</>);})()}</div>);})}</div></div>))}
       <div className="card ia-section"><div className="ia-header"><div className="ia-dot"/><p className="ia-title">Personal IA</p><p className="ia-sub">Substitua exercícios e personalize seu treino</p></div><div className="chat-msgs">{msgs.map((m,i)=>(m.text==="typing"?<div key={i} className="cmsg ai typing"><span/><span/><span/></div>:<div key={i} className={`cmsg ${m.isUpdate?"update":m.role}`}>{m.text}</div>))}</div><div className="chips">{quickChips.map(c=><div key={c} className="chip" onClick={()=>send(c)}>{c}</div>)}</div><div className="chat-input-row"><input className="chat-input" placeholder="Ex: Não gosto de agachamento, o que posso substituir?" value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>e.key==="Enter"&&send()}/><button className="chat-send" onClick={()=>send()} disabled={load}>Enviar</button></div></div>
     </div>
   );
