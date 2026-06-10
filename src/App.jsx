@@ -160,10 +160,10 @@ body { background: ${C.bg}; color: ${C.text}; font-family: 'Barlow', sans-serif;
 .macro-val  { font-family:'Bebas Neue',cursive; font-size:26px; color:${C.accent}; line-height:1; }
 .macro-label{ font-size:10px; text-transform:uppercase; letter-spacing:2px; color:${C.muted}; margin-top:3px; }
 
-.week-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:20px; }
-.wcard { padding:14px 16px; border-radius:10px; }
-.wcard-n    { font-family:'Bebas Neue',cursive; font-size:30px; color:${C.accent}; line-height:1; }
-.wcard-name { font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:13px; text-transform:uppercase; margin:4px 0 2px; }
+.week-grid { display:flex; flex-direction:column; gap:10px; margin-bottom:20px; }
+.wcard { padding:0; border-radius:12px; overflow:hidden; }
+.wcard-n    { font-family:'Bebas Neue',cursive; font-size:36px; color:${C.accent}; line-height:1; }
+.wcard-name { font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:14px; text-transform:uppercase; margin:4px 0 2px; letter-spacing:.5px; }
 .wcard-desc { font-size:11px; color:${C.muted}; }
 .treino-list { border-radius:12px; overflow:hidden; margin-bottom:20px; }
 .treino-item { display:flex; align-items:center; gap:14px; padding:13px 18px; border-bottom:1px solid ${C.border}; transition:background .2s; }
@@ -235,7 +235,6 @@ body { background: ${C.bg}; color: ${C.text}; font-family: 'Barlow', sans-serif;
   .mob-nav-btn.on { color:${C.accent}; }
   .mcontent { padding:14px 14px 72px; }
   .dash-grid { grid-template-columns:1fr 1fr; gap:10px; }
-  .week-grid { grid-template-columns:1fr; }
   .meal-grid { grid-template-columns:1fr; }
   .fields-row { grid-template-columns:1fr; }
 }
@@ -1304,7 +1303,156 @@ function Treinos({ protocolo, perfil, onUpdateProtocolo }) {
         </div>
       </div>
 
-      <div className="week-grid">{dias.map(([dia,info])=>(<div key={dia} className="card wcard"><div className="wcard-n">{dia}</div><div className="wcard-name">{info.nome}</div><div className="wcard-desc">{info.ex.length} exercícios</div></div>))}</div>
+      <div className="week-grid">{dias.map(([dia,info])=>{
+        // SVG anatômico por grupo muscular
+        const svgMusculo = (nome) => {
+          const n = nome.toLowerCase();
+          // Peito + Tríceps
+          if(n.includes("peito")||n.includes("tríceps")||n.includes("triceps")){return(
+            <svg viewBox="0 0 120 140" width="100%" height="100%">
+              <ellipse cx="60" cy="70" rx="52" ry="62" fill="#111" opacity=".6"/>
+              {/* torso base */}
+              <path d="M30 45 Q40 30 60 28 Q80 30 90 45 L92 100 Q60 112 28 100 Z" fill="#1a1a1a" stroke="#2a2a2a" strokeWidth="1"/>
+              {/* peitoral esquerdo highlight */}
+              <path d="M33 50 Q42 38 58 40 L60 72 Q42 74 30 68 Z" fill={`rgba(102,255,240,0.5)`} filter="url(#glow)"/>
+              {/* peitoral direito highlight */}
+              <path d="M87 50 Q78 38 62 40 L60 72 Q78 74 90 68 Z" fill={`rgba(102,255,240,0.5)`} filter="url(#glow)"/>
+              {/* tríceps laterais */}
+              <path d="M22 55 Q18 60 19 78 Q24 82 30 78 Q28 65 30 52 Z" fill="rgba(102,255,240,0.3)"/>
+              <path d="M98 55 Q102 60 101 78 Q96 82 90 78 Q92 65 90 52 Z" fill="rgba(102,255,240,0.3)"/>
+              {/* linha central */}
+              <line x1="60" y1="38" x2="60" y2="100" stroke="rgba(102,255,240,.2)" strokeWidth="1"/>
+              {/* abs suave */}
+              <path d="M48 76 Q60 78 72 76 L70 100 Q60 104 50 100 Z" fill="rgba(255,255,255,.04)" stroke="rgba(255,255,255,.06)" strokeWidth="1"/>
+              <defs><filter id="glow"><feGaussianBlur stdDeviation="2" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+            </svg>
+          );}
+          // Costas + Bíceps
+          if(n.includes("costas")||n.includes("bíceps")||n.includes("biceps")){return(
+            <svg viewBox="0 0 120 140" width="100%" height="100%">
+              <ellipse cx="60" cy="70" rx="52" ry="62" fill="#111" opacity=".6"/>
+              <path d="M28 42 Q40 28 60 26 Q80 28 92 42 L95 105 Q60 118 25 105 Z" fill="#1a1a1a" stroke="#2a2a2a" strokeWidth="1"/>
+              {/* trapézio */}
+              <path d="M40 30 Q60 22 80 30 L75 50 Q60 44 45 50 Z" fill="rgba(102,255,240,0.4)"/>
+              {/* grande dorsal esq */}
+              <path d="M28 52 Q22 68 26 88 Q38 96 48 88 L50 58 Q38 48 28 52 Z" fill="rgba(102,255,240,0.5)"/>
+              {/* grande dorsal dir */}
+              <path d="M92 52 Q98 68 94 88 Q82 96 72 88 L70 58 Q82 48 92 52 Z" fill="rgba(102,255,240,0.5)"/>
+              {/* romboides centro */}
+              <path d="M46 46 Q60 40 74 46 L72 72 Q60 76 48 72 Z" fill="rgba(102,255,240,0.25)"/>
+              {/* bíceps */}
+              <ellipse cx="20" cy="70" rx="8" ry="16" fill="rgba(102,255,240,0.35)" transform="rotate(-10,20,70)"/>
+              <ellipse cx="100" cy="70" rx="8" ry="16" fill="rgba(102,255,240,0.35)" transform="rotate(10,100,70)"/>
+            </svg>
+          );}
+          // Pernas / Quadríceps / Glúteo / Posterior
+          if(n.includes("perna")||n.includes("quadrícep")||n.includes("glúteo")||n.includes("posterior")||n.includes("lower")){return(
+            <svg viewBox="0 0 120 140" width="100%" height="100%">
+              <ellipse cx="60" cy="70" rx="52" ry="62" fill="#111" opacity=".6"/>
+              {/* quadríceps esq */}
+              <path d="M28 30 Q42 26 50 30 L52 85 Q40 90 26 82 Z" fill="rgba(102,255,240,0.5)"/>
+              {/* quadríceps dir */}
+              <path d="M92 30 Q78 26 70 30 L68 85 Q80 90 94 82 Z" fill="rgba(102,255,240,0.5)"/>
+              {/* separação quads */}
+              <line x1="44" y1="30" x2="46" y2="84" stroke="rgba(0,0,0,.5)" strokeWidth="1.5"/>
+              <line x1="76" y1="30" x2="74" y2="84" stroke="rgba(0,0,0,.5)" strokeWidth="1.5"/>
+              {/* glúteos */}
+              <path d="M32 20 Q60 10 88 20 L86 38 Q60 44 34 38 Z" fill="rgba(102,255,240,0.3)"/>
+              {/* panturrilha */}
+              <ellipse cx="40" cy="112" rx="10" ry="16" fill="rgba(102,255,240,0.2)"/>
+              <ellipse cx="80" cy="112" rx="10" ry="16" fill="rgba(102,255,240,0.2)"/>
+              {/* linha divisória pernas */}
+              <line x1="60" y1="26" x2="60" y2="130" stroke="rgba(0,0,0,.4)" strokeWidth="2"/>
+            </svg>
+          );}
+          // Ombro + Trapézio / Desenvolvimento
+          if(n.includes("ombro")||n.includes("trapézio")||n.includes("trapezio")||n.includes("desenvolvimento")){return(
+            <svg viewBox="0 0 120 140" width="100%" height="100%">
+              <ellipse cx="60" cy="70" rx="52" ry="62" fill="#111" opacity=".6"/>
+              <path d="M32 50 Q42 36 60 34 Q78 36 88 50 L90 95 Q60 106 30 95 Z" fill="#1a1a1a" stroke="#2a2a2a" strokeWidth="1"/>
+              {/* deltoide esq */}
+              <path d="M14 44 Q10 36 20 30 Q30 26 38 34 L36 60 Q22 62 14 54 Z" fill="rgba(102,255,240,0.6)"/>
+              {/* deltoide dir */}
+              <path d="M106 44 Q110 36 100 30 Q90 26 82 34 L84 60 Q98 62 106 54 Z" fill="rgba(102,255,240,0.6)"/>
+              {/* trapézio */}
+              <path d="M36 28 Q60 18 84 28 L80 50 Q60 44 40 50 Z" fill="rgba(102,255,240,0.45)"/>
+              {/* pescoço */}
+              <path d="M52 18 Q60 12 68 18 L66 32 Q60 28 54 32 Z" fill="rgba(102,255,240,0.2)"/>
+              {/* torso corpo */}
+              <path d="M40 52 Q60 56 80 52 L78 95 Q60 100 42 95 Z" fill="rgba(255,255,255,.03)"/>
+            </svg>
+          );}
+          // HIIT / Cardio / Core / Mobilidade
+          if(n.includes("hiit")||n.includes("cardio")||n.includes("core")||n.includes("mobilidade")||n.includes("abs")){return(
+            <svg viewBox="0 0 120 140" width="100%" height="100%">
+              <ellipse cx="60" cy="70" rx="52" ry="62" fill="#111" opacity=".6"/>
+              <path d="M34 42 Q42 30 60 28 Q78 30 86 42 L88 105 Q60 115 32 105 Z" fill="#1a1a1a" stroke="#2a2a2a" strokeWidth="1"/>
+              {/* abs 6 pack */}
+              {[[48,52],[48,68],[48,84],[72,52],[72,68],[72,84]].map(([x,y],i)=>(
+                <ellipse key={i} cx={x} cy={y} rx="9" ry="7" fill="rgba(102,255,240,0.4)" stroke="rgba(0,0,0,.3)" strokeWidth="1"/>
+              ))}
+              {/* linha alba */}
+              <line x1="60" y1="42" x2="60" y2="96" stroke="rgba(0,0,0,.5)" strokeWidth="1.5"/>
+              {/* linha horizontal */}
+              <line x1="38" y1="62" x2="82" y2="62" stroke="rgba(0,0,0,.3)" strokeWidth="1"/>
+              <line x1="38" y1="78" x2="82" y2="78" stroke="rgba(0,0,0,.3)" strokeWidth="1"/>
+              {/* oblíquos */}
+              <path d="M34 58 Q30 72 34 88 Q40 92 46 86 L46 52 Q40 50 34 58 Z" fill="rgba(102,255,240,0.25)"/>
+              <path d="M86 58 Q90 72 86 88 Q80 92 74 86 L74 52 Q80 50 86 58 Z" fill="rgba(102,255,240,0.25)"/>
+            </svg>
+          );}
+          // Upper / Peito + Costas / Full Body
+          if(n.includes("upper")||n.includes("full")){return(
+            <svg viewBox="0 0 120 140" width="100%" height="100%">
+              <ellipse cx="60" cy="70" rx="52" ry="62" fill="#111" opacity=".6"/>
+              <path d="M28 42 Q42 28 60 26 Q78 28 92 42 L92 100 Q60 112 28 100 Z" fill="#1a1a1a" stroke="#2a2a2a" strokeWidth="1"/>
+              {/* corpo inteiro highlight */}
+              <path d="M34 44 Q44 34 58 36 L60 68 Q44 70 32 64 Z" fill="rgba(102,255,240,0.4)"/>
+              <path d="M86 44 Q76 34 62 36 L60 68 Q76 70 88 64 Z" fill="rgba(102,255,240,0.4)"/>
+              <path d="M36 68 Q48 72 60 70 Q72 72 84 68 L82 96 Q60 104 38 96 Z" fill="rgba(102,255,240,0.2)"/>
+              <ellipse cx="18" cy="66" rx="9" ry="18" fill="rgba(102,255,240,0.3)" transform="rotate(-8,18,66)"/>
+              <ellipse cx="102" cy="66" rx="9" ry="18" fill="rgba(102,255,240,0.3)" transform="rotate(8,102,66)"/>
+            </svg>
+          );}
+          // Descanso
+          if(n.includes("descanso")){return(
+            <svg viewBox="0 0 120 140" width="100%" height="100%">
+              <ellipse cx="60" cy="70" rx="52" ry="62" fill="#111" opacity=".6"/>
+              <path d="M32 44 Q42 30 60 28 Q78 30 88 44 L88 100 Q60 112 32 100 Z" fill="#1a1a1a" stroke="#1a1a1a" strokeWidth="1"/>
+              <text x="60" y="78" textAnchor="middle" fill="#333" fontSize="32" fontFamily="Arial">💤</text>
+            </svg>
+          );}
+          // Default genérico
+          return(
+            <svg viewBox="0 0 120 140" width="100%" height="100%">
+              <ellipse cx="60" cy="70" rx="52" ry="62" fill="#111" opacity=".6"/>
+              <path d="M32 44 Q42 30 60 28 Q78 30 88 44 L88 100 Q60 112 32 100 Z" fill="#1a1a1a" stroke="#2a2a2a" strokeWidth="1"/>
+              <path d="M36 46 Q48 36 60 36 Q72 36 84 46 L82 94 Q60 102 38 94 Z" fill="rgba(102,255,240,0.2)"/>
+            </svg>
+          );
+        };
+
+        return(
+          <div key={dia} className="card wcard" style={{cursor:"pointer",background:"#0F0F0F",border:"1px solid #1e1e1e",transition:"border-color .2s"}}
+            onMouseOver={e=>e.currentTarget.style.borderColor="rgba(102,255,240,.2)"}
+            onMouseOut={e=>e.currentTarget.style.borderColor="#1e1e1e"}>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"14px 18px",position:"relative",overflow:"hidden",minHeight:90}}>
+              {/* Fundo gradiente sutil */}
+              <div style={{position:"absolute",inset:0,background:"linear-gradient(135deg,rgba(102,255,240,.03) 0%,transparent 60%)",pointerEvents:"none"}}/>
+              {/* Texto */}
+              <div style={{position:"relative",zIndex:1}}>
+                <div className="wcard-n">{dia}</div>
+                <div className="wcard-name">{info.nome}</div>
+                <div className="wcard-desc">{info.ex.length} exercícios</div>
+              </div>
+              {/* SVG muscular */}
+              <div style={{width:90,height:100,flexShrink:0,position:"relative",zIndex:1,opacity:.9}}>
+                {svgMusculo(info.nome)}
+              </div>
+            </div>
+          </div>
+        );
+      })}</div>
 
       {/* MODAL 1RM */}
       {modal1RM&&(
