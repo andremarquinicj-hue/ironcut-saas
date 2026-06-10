@@ -1739,6 +1739,12 @@ function Perfil({ perfil, onLogout, onRefazerProtocolo, onAtualizarDados }) {
 
       {/* MODAL REFAZER PROTOCOLO */}
       {modal&&(<div className="modal"><div className="modal-box"><p className="cad-title">REFAZER <span>PROTOCOLO</span></p><p className="cad-sub">Atualize seu objetivo e seu plano será regenerado!</p><div className="field"><label>Novo Objetivo</label><div className="goal-grid"><div className={`goal-card${novoObj==="fat"?" sel-fat":""}`} onClick={()=>setNovoObj("fat")}><div className="gi">🔥</div><div className="gn">Emagrecer</div><div className="gd">Déficit calórico e definição</div></div><div className={`goal-card${novoObj==="massa"?" sel-mass":""}`} onClick={()=>setNovoObj("massa")}><div className="gi">💪</div><div className="gn">Ganhar Massa</div><div className="gd">Hipertrofia e superávit</div></div></div></div><div className="field"><label>Nível de Atividade</label><select value={novaAtiv} onChange={e=>setNovaAtiv(e.target.value)}>{Object.keys(ATIVIDADE).map(k=><option key={k} value={k}>{k}</option>)}</select></div><div className="field"><label>Local de Treino</label><div className="pill-group">{["Academia completa","Academia básica","Em casa","Ao ar livre"].map(l=>(<div key={l} className={`pill${novoLocal===l?" sel":""}`} onClick={()=>setNovoLocal(l)}>{l}</div>))}</div></div><div style={{display:"flex",gap:10,marginTop:20}}><button className="btn btn-accent" style={{flex:1}} onClick={()=>{onRefazerProtocolo({...perfil,objetivo:novoObj,nivelAtividade:novaAtiv,localTreino:novoLocal});setModal(false);}}>🔥 Gerar Novo Protocolo</button><button className="btn btn-outline" onClick={()=>setModal(false)}>Cancelar</button></div></div></div>)}
+
+      {/* NOTIFICAÇÕES */}
+      <div style={{marginTop:28}}>
+        <div style={{height:1,background:"#1a1a1a",marginBottom:24}}/>
+        <Notificacoes/>
+      </div>
     </div>
   );
 }
@@ -2706,7 +2712,6 @@ export default function App() {
     {id:"medidas",  icon:"📏",label:"Medidas"},
     {id:"fotos",    icon:"📸",label:"Progresso"},
     {id:"esporte",  icon:"⚡",label:"Esporte"},
-    {id:"notif",    icon:"🔔",label:"Lembretes"},
     {id:"perfil",   icon:"👤",label:"Perfil"},
   ];
 
@@ -2758,7 +2763,6 @@ export default function App() {
             {aba==="medidas"&&<Medidas perfil={perfil} pesosLog={pesosLog} onPesoIdealAtualizado={v=>setPesoIdealReal(v)}/>}
             {aba==="fotos"&&<Fotos perfil={perfil}/>}
             {aba==="esporte"&&<Esporte perfil={perfil}/>}
-            {aba==="notif"&&<Notificacoes/>}
             {aba==="perfil"&&<Perfil perfil={perfil} onLogout={onLogout} onAtualizarDados={novoPerfil=>{setPerfil(novoPerfil);syncStorage(novoPerfil,proto,pesosLog,aguaLog);}} onRefazerProtocolo={async(novoPerfil)=>{
               setLoading(true);
               const novoProto=await gerarProtocolo(novoPerfil);
