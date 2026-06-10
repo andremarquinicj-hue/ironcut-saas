@@ -1221,20 +1221,45 @@ function Medidas({ perfil, pesosLog, onPesoIdealAtualizado }) {
         <button className="btn btn-accent" style={{width:"100%"}} onClick={salvar}>💾 Salvar Medidas</button>
       </div>
 
-      {historico.length > 1 && (
+      {historico.length > 0 && (
         <div className="card" style={{padding:"18px 20px",marginBottom:18}}>
-          <p style={{fontFamily:"'Barlow Condensed'",fontWeight:700,fontSize:15,textTransform:"uppercase",letterSpacing:1,marginBottom:12}}>Histórico de Registros</p>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+            <p style={{fontFamily:"'Barlow Condensed'",fontWeight:700,fontSize:15,textTransform:"uppercase",letterSpacing:1}}>Histórico de Registros</p>
+            <button
+              onClick={()=>{
+                if(window.confirm("Apagar todo o histórico de medidas? Esta ação não pode ser desfeita.")){
+                  setHistorico([]);
+                  localStorage.removeItem(MED_KEY);
+                }
+              }}
+              style={{padding:"5px 12px",background:"transparent",border:"1px solid rgba(255,107,107,.3)",borderRadius:6,color:"#ff6b6b",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:11,letterSpacing:1,textTransform:"uppercase",cursor:"pointer"}}
+            >
+              🗑️ Limpar tudo
+            </button>
+          </div>
           <div style={{display:"flex",flexDirection:"column",gap:8}}>
             {[...historico].reverse().slice(0,6).map((reg,i)=>{
+              const idxReal = historico.length - 1 - i;
               const cls = reg.pct ? classGordura(reg.pct, perfil.sexo) : null;
               return (
-                <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 14px",background:"#0D0D0D",border:"1px solid #1a1a1a",borderRadius:8}}>
-                  <span style={{fontSize:12,color:C.muted,fontWeight:700}}>{reg.data}</span>
-                  <div style={{display:"flex",gap:12,alignItems:"center",fontSize:12,flexWrap:"wrap"}}>
+                <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 14px",background:"#0D0D0D",border:"1px solid #1a1a1a",borderRadius:8,gap:8}}>
+                  <span style={{fontSize:12,color:C.muted,fontWeight:700,flexShrink:0}}>{reg.data}</span>
+                  <div style={{display:"flex",gap:10,alignItems:"center",fontSize:12,flexWrap:"wrap",flex:1}}>
                     {reg.cintura && <span style={{color:C.lgray}}>Cin: <strong style={{color:C.text}}>{reg.cintura}cm</strong></span>}
                     {reg.braco && <span style={{color:C.lgray}}>Br: <strong style={{color:C.text}}>{reg.braco}cm</strong></span>}
                     {reg.pct && cls && <span style={{color:cls.cor,fontWeight:700}}>{reg.pct}% {cls.emoji}</span>}
                   </div>
+                  <button
+                    onClick={()=>{
+                      const novo = historico.filter((_,j)=>j!==idxReal);
+                      setHistorico(novo);
+                      localStorage.setItem(MED_KEY, JSON.stringify(novo));
+                    }}
+                    style={{flexShrink:0,background:"transparent",border:"none",color:"#444",fontSize:16,cursor:"pointer",padding:"2px 6px",lineHeight:1,transition:"color .2s"}}
+                    onMouseOver={e=>e.target.style.color="#ff6b6b"}
+                    onMouseOut={e=>e.target.style.color="#444"}
+                    title="Apagar este registro"
+                  >✕</button>
                 </div>
               );
             })}
