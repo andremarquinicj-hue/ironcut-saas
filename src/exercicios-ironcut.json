@@ -1,0 +1,666 @@
+{
+  "PEITO": [
+    {
+      "nome": "Supino Reto",
+      "id": "Barbell_Bench_Press_-_Medium_Grip",
+      "equipamento": "barbell",
+      "musculoPrincipal": [
+        "chest"
+      ],
+      "imagens": [
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Barbell_Bench_Press_-_Medium_Grip/0.jpg",
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Barbell_Bench_Press_-_Medium_Grip/1.jpg"
+      ]
+    },
+    {
+      "nome": "Supino Inclinado",
+      "id": "Barbell_Incline_Bench_Press_-_Medium_Grip",
+      "equipamento": "barbell",
+      "musculoPrincipal": [
+        "chest"
+      ],
+      "imagens": [
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Barbell_Incline_Bench_Press_-_Medium_Grip/0.jpg",
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Barbell_Incline_Bench_Press_-_Medium_Grip/1.jpg"
+      ]
+    },
+    {
+      "nome": "Crucifixo",
+      "id": "Dumbbell_Flyes",
+      "equipamento": "dumbbell",
+      "musculoPrincipal": [
+        "chest"
+      ],
+      "imagens": [
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Dumbbell_Flyes/0.jpg",
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Dumbbell_Flyes/1.jpg"
+      ]
+    },
+    {
+      "nome": "Flexão",
+      "id": "Pushups",
+      "equipamento": "body only",
+      "musculoPrincipal": [
+        "chest"
+      ],
+      "imagens": [
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Pushups/0.jpg",
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Pushups/1.jpg"
+      ]
+    },
+    {
+      "nome": "Flexão Inclinada",
+      "id": "Incline_Push-Up",
+      "equipamento": "body only",
+      "musculoPrincipal": [
+        "chest"
+      ],
+      "imagens": [
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Incline_Push-Up/0.jpg",
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Incline_Push-Up/1.jpg"
+      ]
+    },
+    {
+      "nome": "Flexão Wide",
+      "id": "Pushups_Close_and_Wide_Hand_Positions",
+      "equipamento": "body only",
+      "musculoPrincipal": [
+        "chest"
+      ],
+      "imagens": [
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Pushups_Close_and_Wide_Hand_Positions/0.jpg",
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Pushups_Close_and_Wide_Hand_Positions/1.jpg"
+      ]
+    },
+    {
+      "nome": "Flexão Diamante",
+      "id": "Pushups_Close_and_Wide_Hand_Positions",
+      "equipamento": "body only",
+      "musculoPrincipal": [
+        "chest"
+      ],
+      "imagens": [
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Pushups_Close_and_Wide_Hand_Positions/0.jpg",
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Pushups_Close_and_Wide_Hand_Positions/1.jpg"
+      ]
+    }
+  ],
+  "COSTAS": [
+    {
+      "nome": "Puxada Frente",
+      "id": "Wide-Grip_Lat_Pulldown",
+      "equipamento": "cable",
+      "musculoPrincipal": [
+        "lats"
+      ],
+      "imagens": [
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Wide-Grip_Lat_Pulldown/0.jpg",
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Wide-Grip_Lat_Pulldown/1.jpg"
+      ]
+    },
+    {
+      "nome": "Puxada Aberta",
+      "id": "Wide-Grip_Lat_Pulldown",
+      "equipamento": "cable",
+      "musculoPrincipal": [
+        "lats"
+      ],
+      "imagens": [
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Wide-Grip_Lat_Pulldown/0.jpg",
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Wide-Grip_Lat_Pulldown/1.jpg"
+      ]
+    },
+    {
+      "nome": "Remada Curvada",
+      "id": "Bent_Over_Barbell_Row",
+      "equipamento": "barbell",
+      "musculoPrincipal": [
+        "middle back"
+      ],
+      "imagens": [
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Bent_Over_Barbell_Row/0.jpg",
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Bent_Over_Barbell_Row/1.jpg"
+      ]
+    },
+    {
+      "nome": "Remada Unilateral",
+      "id": "One-Arm_Dumbbell_Row",
+      "equipamento": "dumbbell",
+      "musculoPrincipal": [
+        "middle back"
+      ],
+      "imagens": [
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/One-Arm_Dumbbell_Row/0.jpg",
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/One-Arm_Dumbbell_Row/1.jpg"
+      ]
+    },
+    {
+      "nome": "Superman",
+      "id": "Superman",
+      "equipamento": "body only",
+      "musculoPrincipal": [
+        "lower back"
+      ],
+      "imagens": [
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Superman/0.jpg",
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Superman/1.jpg"
+      ]
+    }
+  ],
+  "PERNAS": [
+    {
+      "nome": "Agachamento Livre",
+      "id": "Barbell_Squat",
+      "equipamento": "barbell",
+      "musculoPrincipal": [
+        "quadriceps"
+      ],
+      "imagens": [
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Barbell_Squat/0.jpg",
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Barbell_Squat/1.jpg"
+      ]
+    },
+    {
+      "nome": "Agachamento",
+      "id": "Barbell_Squat",
+      "equipamento": "barbell",
+      "musculoPrincipal": [
+        "quadriceps"
+      ],
+      "imagens": [
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Barbell_Squat/0.jpg",
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Barbell_Squat/1.jpg"
+      ]
+    },
+    {
+      "nome": "Agachamento Sumô",
+      "id": "Plie_Dumbbell_Squat",
+      "equipamento": "dumbbell",
+      "musculoPrincipal": [
+        "quadriceps"
+      ],
+      "imagens": [
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Plie_Dumbbell_Squat/0.jpg",
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Plie_Dumbbell_Squat/1.jpg"
+      ]
+    },
+    {
+      "nome": "Agachamento Jump",
+      "id": "Freehand_Jump_Squat",
+      "equipamento": "body only",
+      "musculoPrincipal": [
+        "quadriceps"
+      ],
+      "imagens": [
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Freehand_Jump_Squat/0.jpg",
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Freehand_Jump_Squat/1.jpg"
+      ]
+    },
+    {
+      "nome": "Leg Press",
+      "id": "Leg_Press",
+      "equipamento": "machine",
+      "musculoPrincipal": [
+        "quadriceps"
+      ],
+      "imagens": [
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Leg_Press/0.jpg",
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Leg_Press/1.jpg"
+      ]
+    },
+    {
+      "nome": "Leg Press 45°",
+      "id": "Leg_Press",
+      "equipamento": "machine",
+      "musculoPrincipal": [
+        "quadriceps"
+      ],
+      "imagens": [
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Leg_Press/0.jpg",
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Leg_Press/1.jpg"
+      ]
+    },
+    {
+      "nome": "Cadeira Extensora",
+      "id": "Leg_Extensions",
+      "equipamento": "machine",
+      "musculoPrincipal": [
+        "quadriceps"
+      ],
+      "imagens": [
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Leg_Extensions/0.jpg",
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Leg_Extensions/1.jpg"
+      ]
+    },
+    {
+      "nome": "Mesa Flexora",
+      "id": "Lying_Leg_Curls",
+      "equipamento": "machine",
+      "musculoPrincipal": [
+        "hamstrings"
+      ],
+      "imagens": [
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Lying_Leg_Curls/0.jpg",
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Lying_Leg_Curls/1.jpg"
+      ]
+    },
+    {
+      "nome": "Stiff",
+      "id": "Stiff-Legged_Barbell_Deadlift",
+      "equipamento": "barbell",
+      "musculoPrincipal": [
+        "hamstrings"
+      ],
+      "imagens": [
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Stiff-Legged_Barbell_Deadlift/0.jpg",
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Stiff-Legged_Barbell_Deadlift/1.jpg"
+      ]
+    },
+    {
+      "nome": "Stiff Unilateral",
+      "id": "Stiff-Legged_Barbell_Deadlift",
+      "equipamento": "barbell",
+      "musculoPrincipal": [
+        "hamstrings"
+      ],
+      "imagens": [
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Stiff-Legged_Barbell_Deadlift/0.jpg",
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Stiff-Legged_Barbell_Deadlift/1.jpg"
+      ]
+    },
+    {
+      "nome": "Afundo",
+      "id": "Dumbbell_Lunges",
+      "equipamento": "dumbbell",
+      "musculoPrincipal": [
+        "quadriceps"
+      ],
+      "imagens": [
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Dumbbell_Lunges/0.jpg",
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Dumbbell_Lunges/1.jpg"
+      ]
+    },
+    {
+      "nome": "Avanço",
+      "id": "Dumbbell_Lunges",
+      "equipamento": "dumbbell",
+      "musculoPrincipal": [
+        "quadriceps"
+      ],
+      "imagens": [
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Dumbbell_Lunges/0.jpg",
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Dumbbell_Lunges/1.jpg"
+      ]
+    },
+    {
+      "nome": "Panturrilha",
+      "id": "Standing_Calf_Raises",
+      "equipamento": "machine",
+      "musculoPrincipal": [
+        "calves"
+      ],
+      "imagens": [
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Standing_Calf_Raises/0.jpg",
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Standing_Calf_Raises/1.jpg"
+      ]
+    },
+    {
+      "nome": "Elevação Pélvica",
+      "id": "Barbell_Hip_Thrust",
+      "equipamento": "barbell",
+      "musculoPrincipal": [
+        "glutes"
+      ],
+      "imagens": [
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Barbell_Hip_Thrust/0.jpg",
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Barbell_Hip_Thrust/1.jpg"
+      ]
+    },
+    {
+      "nome": "Elevação Quadril",
+      "id": "Barbell_Hip_Thrust",
+      "equipamento": "barbell",
+      "musculoPrincipal": [
+        "glutes"
+      ],
+      "imagens": [
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Barbell_Hip_Thrust/0.jpg",
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Barbell_Hip_Thrust/1.jpg"
+      ]
+    },
+    {
+      "nome": "Abdução no Cabo",
+      "id": "Cable_Hip_Adduction",
+      "equipamento": "cable",
+      "musculoPrincipal": [
+        "quadriceps"
+      ],
+      "imagens": [
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Cable_Hip_Adduction/0.jpg",
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Cable_Hip_Adduction/1.jpg"
+      ]
+    },
+    {
+      "nome": "Cadeira Flexora",
+      "id": "Seated_Leg_Curl",
+      "equipamento": "machine",
+      "musculoPrincipal": [
+        "hamstrings"
+      ],
+      "imagens": [
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Seated_Leg_Curl/0.jpg",
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Seated_Leg_Curl/1.jpg"
+      ]
+    },
+    {
+      "nome": "Levantamento Terra",
+      "id": "Barbell_Deadlift",
+      "equipamento": "barbell",
+      "musculoPrincipal": [
+        "lower back"
+      ],
+      "imagens": [
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Barbell_Deadlift/0.jpg",
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Barbell_Deadlift/1.jpg"
+      ]
+    },
+    {
+      "nome": "Passada com Halter",
+      "id": "Bodyweight_Walking_Lunge",
+      "equipamento": null,
+      "musculoPrincipal": [
+        "quadriceps"
+      ],
+      "imagens": [
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Bodyweight_Walking_Lunge/0.jpg",
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Bodyweight_Walking_Lunge/1.jpg"
+      ]
+    },
+    {
+      "nome": "Step Up",
+      "id": "Step-up_with_Knee_Raise",
+      "equipamento": "body only",
+      "musculoPrincipal": [
+        "glutes"
+      ],
+      "imagens": [
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Step-up_with_Knee_Raise/0.jpg",
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Step-up_with_Knee_Raise/1.jpg"
+      ]
+    },
+    {
+      "nome": "Step Up Cadeira",
+      "id": "Step-up_with_Knee_Raise",
+      "equipamento": "body only",
+      "musculoPrincipal": [
+        "glutes"
+      ],
+      "imagens": [
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Step-up_with_Knee_Raise/0.jpg",
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Step-up_with_Knee_Raise/1.jpg"
+      ]
+    },
+    {
+      "nome": "Wall Squat",
+      "id": "Sit_Squats",
+      "equipamento": null,
+      "musculoPrincipal": [
+        "quadriceps"
+      ],
+      "imagens": [
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Sit_Squats/0.jpg",
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Sit_Squats/1.jpg"
+      ]
+    }
+  ],
+  "OMBROS": [
+    {
+      "nome": "Desenvolvimento",
+      "id": "Standing_Military_Press",
+      "equipamento": "barbell",
+      "musculoPrincipal": [
+        "shoulders"
+      ],
+      "imagens": [
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Standing_Military_Press/0.jpg",
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Standing_Military_Press/1.jpg"
+      ]
+    },
+    {
+      "nome": "Elevação Lateral",
+      "id": "Side_Lateral_Raise",
+      "equipamento": "dumbbell",
+      "musculoPrincipal": [
+        "shoulders"
+      ],
+      "imagens": [
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Side_Lateral_Raise/0.jpg",
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Side_Lateral_Raise/1.jpg"
+      ]
+    },
+    {
+      "nome": "Elevação Frontal",
+      "id": "Front_Dumbbell_Raise",
+      "equipamento": "dumbbell",
+      "musculoPrincipal": [
+        "shoulders"
+      ],
+      "imagens": [
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Front_Dumbbell_Raise/0.jpg",
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Front_Dumbbell_Raise/1.jpg"
+      ]
+    },
+    {
+      "nome": "Remada Alta",
+      "id": "Upright_Cable_Row",
+      "equipamento": "cable",
+      "musculoPrincipal": [
+        "traps"
+      ],
+      "imagens": [
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Upright_Cable_Row/0.jpg",
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Upright_Cable_Row/1.jpg"
+      ]
+    },
+    {
+      "nome": "Encolhimento",
+      "id": "Dumbbell_Shrug",
+      "equipamento": "dumbbell",
+      "musculoPrincipal": [
+        "traps"
+      ],
+      "imagens": [
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Dumbbell_Shrug/0.jpg",
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Dumbbell_Shrug/1.jpg"
+      ]
+    }
+  ],
+  "BÍCEPS": [
+    {
+      "nome": "Rosca Direta",
+      "id": "Barbell_Curl",
+      "equipamento": "barbell",
+      "musculoPrincipal": [
+        "biceps"
+      ],
+      "imagens": [
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Barbell_Curl/0.jpg",
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Barbell_Curl/1.jpg"
+      ]
+    },
+    {
+      "nome": "Rosca Martelo",
+      "id": "Hammer_Curls",
+      "equipamento": "dumbbell",
+      "musculoPrincipal": [
+        "biceps"
+      ],
+      "imagens": [
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Hammer_Curls/0.jpg",
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Hammer_Curls/1.jpg"
+      ]
+    }
+  ],
+  "TRÍCEPS": [
+    {
+      "nome": "Tríceps Corda",
+      "id": "Triceps_Pushdown_-_Rope_Attachment",
+      "equipamento": "cable",
+      "musculoPrincipal": [
+        "triceps"
+      ],
+      "imagens": [
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Triceps_Pushdown_-_Rope_Attachment/0.jpg",
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Triceps_Pushdown_-_Rope_Attachment/1.jpg"
+      ]
+    },
+    {
+      "nome": "Tríceps Testa",
+      "id": "Lying_Triceps_Press",
+      "equipamento": "e-z curl bar",
+      "musculoPrincipal": [
+        "triceps"
+      ],
+      "imagens": [
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Lying_Triceps_Press/0.jpg",
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Lying_Triceps_Press/1.jpg"
+      ]
+    },
+    {
+      "nome": "Tríceps Banco",
+      "id": "Bench_Dips",
+      "equipamento": "body only",
+      "musculoPrincipal": [
+        "triceps"
+      ],
+      "imagens": [
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Bench_Dips/0.jpg",
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Bench_Dips/1.jpg"
+      ]
+    },
+    {
+      "nome": "Dip no Banco",
+      "id": "Bench_Dips",
+      "equipamento": "body only",
+      "musculoPrincipal": [
+        "triceps"
+      ],
+      "imagens": [
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Bench_Dips/0.jpg",
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Bench_Dips/1.jpg"
+      ]
+    }
+  ],
+  "ABDÔMEN": [
+    {
+      "nome": "Abdominal",
+      "id": "Crunches",
+      "equipamento": "body only",
+      "musculoPrincipal": [
+        "abdominals"
+      ],
+      "imagens": [
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Crunches/0.jpg",
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Crunches/1.jpg"
+      ]
+    },
+    {
+      "nome": "Abdominal Infra",
+      "id": "Flat_Bench_Lying_Leg_Raise",
+      "equipamento": "body only",
+      "musculoPrincipal": [
+        "abdominals"
+      ],
+      "imagens": [
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Flat_Bench_Lying_Leg_Raise/0.jpg",
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Flat_Bench_Lying_Leg_Raise/1.jpg"
+      ]
+    },
+    {
+      "nome": "Elevação Pernas",
+      "id": "Flat_Bench_Lying_Leg_Raise",
+      "equipamento": "body only",
+      "musculoPrincipal": [
+        "abdominals"
+      ],
+      "imagens": [
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Flat_Bench_Lying_Leg_Raise/0.jpg",
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Flat_Bench_Lying_Leg_Raise/1.jpg"
+      ]
+    },
+    {
+      "nome": "Abdominal Bicicleta",
+      "id": "Air_Bike",
+      "equipamento": "body only",
+      "musculoPrincipal": [
+        "abdominals"
+      ],
+      "imagens": [
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Air_Bike/0.jpg",
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Air_Bike/1.jpg"
+      ]
+    },
+    {
+      "nome": "Prancha",
+      "id": "Plank",
+      "equipamento": "body only",
+      "musculoPrincipal": [
+        "abdominals"
+      ],
+      "imagens": [
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Plank/0.jpg",
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Plank/1.jpg"
+      ]
+    },
+    {
+      "nome": "Prancha Lateral",
+      "id": "Plank",
+      "equipamento": "body only",
+      "musculoPrincipal": [
+        "abdominals"
+      ],
+      "imagens": [
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Plank/0.jpg",
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Plank/1.jpg"
+      ]
+    },
+    {
+      "nome": "Mountain Climber",
+      "id": "Mountain_Climbers",
+      "equipamento": null,
+      "musculoPrincipal": [
+        "quadriceps"
+      ],
+      "imagens": [
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Mountain_Climbers/0.jpg",
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Mountain_Climbers/1.jpg"
+      ]
+    }
+  ],
+  "GLÚTEO": [
+    {
+      "nome": "Coice no Cabo",
+      "id": "One-Legged_Cable_Kickback",
+      "equipamento": "cable",
+      "musculoPrincipal": [
+        "glutes"
+      ],
+      "imagens": [
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/One-Legged_Cable_Kickback/0.jpg",
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/One-Legged_Cable_Kickback/1.jpg"
+      ]
+    },
+    {
+      "nome": "Coice Traseiro",
+      "id": "One-Legged_Cable_Kickback",
+      "equipamento": "cable",
+      "musculoPrincipal": [
+        "glutes"
+      ],
+      "imagens": [
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/One-Legged_Cable_Kickback/0.jpg",
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/One-Legged_Cable_Kickback/1.jpg"
+      ]
+    }
+  ]
+}
