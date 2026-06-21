@@ -4,6 +4,7 @@ const crypto = require("crypto");
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
 const META_CAPI_ACCESS_TOKEN = process.env.META_CAPI_ACCESS_TOKEN;
+const FIREBASE_DB_SECRET = process.env.FIREBASE_DB_SECRET;
 const META_PIXEL_ID = "1603996997852371";
 
 // Mapeamento de valor estimado por produto, usado até confirmarmos
@@ -37,7 +38,7 @@ async function firebasePut(path, data) {
     const req = https.request(
       {
         hostname: "ironcut-21d-default-rtdb.firebaseio.com",
-        path: path + ".json",
+        path: path + ".json?auth=" + FIREBASE_DB_SECRET,
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
