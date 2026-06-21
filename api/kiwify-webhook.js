@@ -1,7 +1,36 @@
 // api/kiwify-webhook.js
 const https = require("https");
+const crypto = require("crypto");
 
-const RESEND_API_KEY = "re_SiVnNfkk_3YQXkrAeLMnByaMZhTFX6nuU";
+const RESEND_API_KEY = process.env.RESEND_API_KEY;
+const META_CAPI_ACCESS_TOKEN = process.env.META_CAPI_ACCESS_TOKEN;
+const META_PIXEL_ID = "1603996997852371";
+
+// Mapeamento de valor estimado por produto, usado até confirmarmos
+// o campo exato de valor pago no payload real da Kiwify.
+const VALOR_POR_PRODUTO = {
+  mensal: 37.90,
+  semestral: 147.00,
+  anual: 197.00,
+};
+const VALOR_PADRAO = 37.90;
+
+function hashSHA256(valor) {
+  if (!valor) return null;
+  return crypto
+    .createHash("sha256")
+    .update(String(valor).trim().toLowerCase())
+    .digest("hex");
+}
+
+function estimarValor(produto) {
+  const nome = (produto || "").toLowerCase();
+  if (nome.includes("anual")) return VALOR_POR_PRODUTO.anual;
+  if (nome.includes("semestral")) return VALOR_POR_PRODUTO.semestral;
+  if (nome.includes("mensal")) return VALOR_POR_PRODUTO.mensal;
+  return VALOR_PADRAO;
+}
+
 async function firebasePut(path, data) {
   return new Promise((resolve, reject) => {
     const body = JSON.stringify(data);
@@ -22,6 +51,74 @@ async function firebasePut(path, data) {
       }
     );
     req.on("error", reject);
+    req.write(body);
+    req.end();
+  });
+}
+
+// Dispara o evento Purchase para o Meta Conversions API.
+// Não bloqueia o fluxo principal do webhook caso falhe.
+async function enviarEventoCompraMeta({ email, telefone, valor, pedido, ip, userAgent, fbc, fbp }) {
+  if (!META_CAPI_ACCESS_TOKEN) {
+    console.warn("META_CAPI_ACCESS_TOKEN ausente — evento Purchase nao enviado.");
+    return null;
+  }
+
+  const userData = {
+    em: email ? [hashSHA256(email)] : undefined,
+    ph: telefone ? [hashSHA256(telefone)] : undefined,
+    client_ip_address: ip || undefined,
+    client_user_agent: userAgent || undefined,
+    fbc: fbc || undefined,
+    fbp: fbp || undefined,
+  };
+
+  // Remove chaves undefined para não confundir a API
+  Object.keys(userData).forEach((k) => userData[k] === undefined && delete userData[k]);
+
+  const eventPayload = {
+    data: [
+      {
+        event_name: "Purchase",
+        event_time: Math.floor(Date.now() / 1000),
+        action_source: "website",
+        event_id: pedido || undefined,
+        user_data: userData,
+        custom_data: {
+          currency: "BRL",
+          value: valor,
+        },
+      },
+    ],
+  };
+
+  const body = JSON.stringify(eventPayload);
+
+  return new Promise((resolve, reject) => {
+    const req = https.request(
+      {
+        hostname: "graph.facebook.com",
+        path: `/v21.0/${META_PIXEL_ID}/events?access_token=${META_CAPI_ACCESS_TOKEN}`,
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Content-Length": Buffer.byteLength(body),
+        },
+      },
+      (res) => {
+        let d = "";
+        res.on("data", (c) => (d += c));
+        res.on("end", () => {
+          console.log("Meta CAPI response:", d);
+          resolve(d);
+        });
+      }
+    );
+    req.on("error", (err) => {
+      console.error("Meta CAPI error:", err);
+      // Não rejeita — falha no CAPI não deve quebrar o webhook
+      resolve(null);
+    });
     req.write(body);
     req.end();
   });
@@ -264,10 +361,23 @@ module.exports = async function handler(req, res) {
     const order = payload?.order || payload;
 
     const email = order?.Customer?.email || order?.customer?.email || null;
+    const telefone =
+      order?.Customer?.mobile ||
+      order?.Customer?.phone ||
+      order?.customer?.mobile ||
+      order?.customer?.phone ||
+      null;
     const status = order?.order_status || order?.status || null;
     const nome = order?.Customer?.full_name || order?.Customer?.first_name || "Aluno";
     const produto = order?.Product?.product_name || "IRONCUT 21D";
     const pedido = order?.order_id || "";
+
+    // Captura IP e user agent da requisição, úteis para o matching do CAPI
+    const ip =
+      req.headers["x-forwarded-for"]?.split(",")[0]?.trim() ||
+      req.socket?.remoteAddress ||
+      null;
+    const userAgent = req.headers["user-agent"] || null;
 
     if (!email) {
       return res.status(200).json({ ok: false, message: "Email nao encontrado" });
@@ -286,6 +396,17 @@ module.exports = async function handler(req, res) {
 
       // Envia email de boas-vindas
       await enviarEmail(email, nome);
+
+      // Dispara evento Purchase para o Meta CAPI (não bloqueia a resposta em caso de erro)
+      const valorEstimado = estimarValor(produto);
+      await enviarEventoCompraMeta({
+        email,
+        telefone,
+        valor: valorEstimado,
+        pedido,
+        ip,
+        userAgent,
+      });
 
       return res.status(200).json({ ok: true, message: "Acesso liberado + email enviado", email });
     }
